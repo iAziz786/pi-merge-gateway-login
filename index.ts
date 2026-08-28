@@ -41,6 +41,10 @@ export default function (pi: ExtensionAPI) {
 		baseUrl: BASE_URL,
 		apiKey: "$MERGE_GATEWAY_API_KEY",
 		api: "openai-responses",
+		// pi's openai-responses provider sends the OpenAI Responses wire format, but
+		// the gateway's /v1/responses endpoint is its native format. This header
+		// tells the gateway to accept (and return) the OpenAI shape.
+		headers: { "X-Merge-Wire-Format": "openai" },
 		models: [
 			{
 				id: "zai/glm-5.3-flash",
