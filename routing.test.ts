@@ -50,15 +50,12 @@ describe("resolveVendorAndModel", () => {
 		expect(result!.payload.model).toBe("deepseek/deepseek-v4-flash");
 	});
 
-	it("maps empiriolabs/deepseek-v4-flash to vendor empiriolabs, rewrites model", () => {
+	it("does not map empiriolabs model ids", () => {
 		const result = resolveVendorAndModel(
-			{ model: "empiriolabs/deepseek-v4-flash", stream: true } as Record<string, unknown>,
+			{ model: "empiriolabs/deepseek-v4-flash" } as Record<string, unknown>,
 			"empiriolabs/deepseek-v4-flash",
 		);
-		expect(result).not.toBeNull();
-		expect(result!.vendor).toBe("empiriolabs");
-		expect(result!.gatewayModelId).toBe("deepseek/deepseek-v4-flash");
-		expect(result!.payload.model).toBe("deepseek/deepseek-v4-flash");
+		expect(result).toBeNull();
 	});
 
 	it("maps deepseek/deepseek-v4-flash to vendor deepseek, no rewrite", () => {

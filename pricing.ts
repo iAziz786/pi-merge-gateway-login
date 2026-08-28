@@ -29,10 +29,9 @@ export const GLM_53_FLASH_COST = {
  * host bills 2× the baseline during peak hours (01:00–04:00, 06:00–10:00 UTC;
  * weekends are never peak). The rates below are the off-peak baseline, so for
  * the `deepseek` variant the displayed cost is a lower bound during weekday
- * peaks. Empiriolabs lists no cache-read price; modeled as 0.
+ * peaks.
  */
 export const DEEPSEEK_V4_FLASH_COSTS = {
 	deepseek: { input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 },
 	particle: { input: 0.035, output: 0.07, cacheRead: 0.007, cacheWrite: 0 },
-	empiriolabs: { input: 0.14, output: 0.28, cacheRead: 0, cacheWrite: 0 },
 } as const;

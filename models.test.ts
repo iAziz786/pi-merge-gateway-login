@@ -44,11 +44,10 @@ describe("Particle GLM 5.3 Flash", () => {
 });
 
 describe("DeepSeek V4 Flash models", () => {
-	it("exports one model per vendor", () => {
+	it("exports one model per vendor (no Empiriolabs)", () => {
 		const ids = DEEPSEEK_V4_FLASH_MODELS.map((m) => m.id).sort();
 		expect(ids).toEqual([
 			"deepseek/deepseek-v4-flash",
-			"empiriolabs/deepseek-v4-flash",
 			"particle/deepseek-v4-flash",
 		]);
 	});
@@ -90,6 +89,5 @@ describe("DeepSeek V4 Flash models", () => {
 		const byId = new Map(DEEPSEEK_V4_FLASH_MODELS.map((m) => [m.id, m]));
 		expect(byId.get("deepseek/deepseek-v4-flash")!.cost.input).toBe(0.22);
 		expect(byId.get("particle/deepseek-v4-flash")!.cost.input).toBe(0.035);
-		expect(byId.get("empiriolabs/deepseek-v4-flash")!.cost.input).toBe(0.14);
 	});
 });

@@ -25,10 +25,7 @@ describe("DeepSeek V4 Flash pricing", () => {
 		expect(DEEPSEEK_V4_FLASH_COSTS.particle.cacheWrite).toBe(0);
 	});
 
-	it("uses Empiriolabs rates (no cache-read billing listed)", () => {
-		expect(DEEPSEEK_V4_FLASH_COSTS.empiriolabs.input).toBe(0.14);
-		expect(DEEPSEEK_V4_FLASH_COSTS.empiriolabs.output).toBe(0.28);
-		expect(DEEPSEEK_V4_FLASH_COSTS.empiriolabs.cacheRead).toBe(0);
-		expect(DEEPSEEK_V4_FLASH_COSTS.empiriolabs.cacheWrite).toBe(0);
+	it("has no empiriolabs entry", () => {
+		expect(DEEPSEEK_V4_FLASH_COSTS).not.toHaveProperty("empiriolabs");
 	});
 });
