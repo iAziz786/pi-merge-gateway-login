@@ -13,9 +13,14 @@
  */
 
 // pi model ID → { vendor, gateway model ID }
+// Vendor-prefixed IDs (particle/…, empiriolabs/…) select the execution host;
+// the official-vendor ID (zai/…, deepseek/…) routes to the vendor itself.
 const VENDOR_MAP: Record<string, { vendor: string; gatewayModelId: string }> = {
 	"zai/glm-5.3-flash": { vendor: "zai", gatewayModelId: "zai/glm-5.3-flash" },
 	"particle/glm-5.3-flash": { vendor: "particle", gatewayModelId: "zai/glm-5.3-flash" },
+	"deepseek/deepseek-v4-flash": { vendor: "deepseek", gatewayModelId: "deepseek/deepseek-v4-flash" },
+	"particle/deepseek-v4-flash": { vendor: "particle", gatewayModelId: "deepseek/deepseek-v4-flash" },
+	"empiriolabs/deepseek-v4-flash": { vendor: "empiriolabs", gatewayModelId: "deepseek/deepseek-v4-flash" },
 };
 
 export function resolveVendorAndModel<T extends Record<string, unknown>>(

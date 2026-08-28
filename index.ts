@@ -19,7 +19,7 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { ZAI_GLM_53_FLASH, PARTICLE_GLM_53_FLASH } from "./models.ts";
+import { ALL_MODELS } from "./models.ts";
 import { resolveVendorAndModel } from "./routing.ts";
 
 const BASE_URL = "https://api-gateway.merge.dev/v1/openai";
@@ -30,7 +30,7 @@ export default function (pi: ExtensionAPI) {
 		baseUrl: BASE_URL,
 		apiKey: "$MERGE_GATEWAY_API_KEY",
 		api: "openai-responses",
-		models: [ZAI_GLM_53_FLASH, PARTICLE_GLM_53_FLASH],
+		models: [...ALL_MODELS],
 	});
 
 	// Resolve vendor and rewrite gateway model ID at request time.

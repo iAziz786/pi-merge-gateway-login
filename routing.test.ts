@@ -34,8 +34,41 @@ describe("resolveVendorAndModel", () => {
 	});
 
 	it("returns null for unknown models", () => {
-		const payload = { model: "gpt-4o", stream: true };
-		const result = resolveVendorAndModel(payload as Record<string, unknown>, "gpt-4o");
+		const payload = { model: "gpt-4o", stream: true } as Record<string, unknown>;
+		const result = resolveVendorAndModel(payload, "gpt-4o");
 		expect(result).toBeNull();
+	});
+
+	it("maps particle/deepseek-v4-flash to vendor particle, rewrites model to deepseek/deepseek-v4-flash", () => {
+		const result = resolveVendorAndModel(
+			{ model: "particle/deepseek-v4-flash", stream: true } as Record<string, unknown>,
+			"particle/deepseek-v4-flash",
+		);
+		expect(result).not.toBeNull();
+		expect(result!.vendor).toBe("particle");
+		expect(result!.gatewayModelId).toBe("deepseek/deepseek-v4-flash");
+		expect(result!.payload.model).toBe("deepseek/deepseek-v4-flash");
+	});
+
+	it("maps empiriolabs/deepseek-v4-flash to vendor empiriolabs, rewrites model", () => {
+		const result = resolveVendorAndModel(
+			{ model: "empiriolabs/deepseek-v4-flash", stream: true } as Record<string, unknown>,
+			"empiriolabs/deepseek-v4-flash",
+		);
+		expect(result).not.toBeNull();
+		expect(result!.vendor).toBe("empiriolabs");
+		expect(result!.gatewayModelId).toBe("deepseek/deepseek-v4-flash");
+		expect(result!.payload.model).toBe("deepseek/deepseek-v4-flash");
+	});
+
+	it("maps deepseek/deepseek-v4-flash to vendor deepseek, no rewrite", () => {
+		const result = resolveVendorAndModel(
+			{ model: "deepseek/deepseek-v4-flash", stream: true } as Record<string, unknown>,
+			"deepseek/deepseek-v4-flash",
+		);
+		expect(result).not.toBeNull();
+		expect(result!.vendor).toBe("deepseek");
+		expect(result!.gatewayModelId).toBe("deepseek/deepseek-v4-flash");
+		expect(result!.payload.model).toBe("deepseek/deepseek-v4-flash");
 	});
 });
