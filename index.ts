@@ -1,18 +1,21 @@
 /**
  * Merge Dev gateway provider (https://docs.merge.dev/merge-gateway/)
  *
- * OpenAI Responses API:
- *   baseUrl: https://api-gateway.merge.dev/v1
- *   endpoint: /responses
+ * OpenAI Responses API (via Merge Dev gateway):
+ *   baseUrl: https://api-gateway.merge.dev/v1/openai
+ *   endpoint: /responses (→ https://api-gateway.merge.dev/v1/openai/responses)
  *   auth:    Bearer <key>  (stored via `/login mergedev`, or $MERGE_GATEWAY_API_KEY)
+ *
+ * We use /v1/openai (not /v1) so OpenAI-only fields like prompt_cache_key and
+ * prompt_cache_retention are properly forwarded to the upstream provider rather
+ * than being silently ignored on the native /v1/responses endpoint.
  *
  * Hosts a single model: GLM 5.3 Flash (zai/glm-5.3-flash).
  * Pricing from https://docs.merge.dev/merge-gateway/models/details/zai-glm-5-3-flash
  * (vendor: ${GLM_53_FLASH_VENDOR}).
  *
- * The gateway exposes the OpenAI Responses contract, so requests stay on the
- * Responses API shape (no chat-completions fields). GLM accepts reasoning
- * effort low / high / max; pi's middle levels fold into those.
+ * GLM accepts reasoning effort low / high / max; pi's middle levels fold
+ * into those.
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -21,7 +24,7 @@ import { pinVendor } from "./routing.ts";
 
 const MODEL_ID = "zai/glm-5.3-flash";
 
-const BASE_URL = "https://api-gateway.merge.dev/v1";
+const BASE_URL = "https://api-gateway.merge.dev/v1/openai";
 
 // Map pi thinking levels to the upstream reasoning effort values
 // (low / high / max). `off: null` disables reasoning when selected.
@@ -41,10 +44,6 @@ export default function (pi: ExtensionAPI) {
 		baseUrl: BASE_URL,
 		apiKey: "$MERGE_GATEWAY_API_KEY",
 		api: "openai-responses",
-		// pi's openai-responses provider sends the OpenAI Responses wire format, but
-		// the gateway's /v1/responses endpoint is its native format. This header
-		// tells the gateway to accept (and return) the OpenAI shape.
-		headers: { "X-Merge-Wire-Format": "openai" },
 		models: [
 			{
 				id: "zai/glm-5.3-flash",
