@@ -24,6 +24,26 @@ import { resolveVendorAndModel } from "./routing.ts";
 
 const BASE_URL = "https://api-gateway.merge.dev/v1/openai";
 
+/**
+ * Rewrites the outgoing request for the Merge Dev gateway: resolves the vendor
+ * and overwrites `model` with the real gateway model ID. Returns undefined to
+ * leave the request untouched (unrelated providers, malformed payloads, or
+ * models not in VENDOR_MAP).
+ *
+ * Exported for unit testing.
+ */
+export function resolveGatewayRequest(
+	payload: unknown,
+): Record<string, unknown> | undefined {
+	if (!payload || typeof payload !== "object") return undefined;
+	const p = payload as Record<string, unknown>;
+	const piModelId = p.model;
+	if (typeof piModelId !== "string") return undefined;
+	const resolved = resolveVendorAndModel(p, piModelId);
+	if (!resolved) return undefined;
+	return { ...resolved.payload, vendor: resolved.vendor };
+}
+
 export default function (pi: ExtensionAPI) {
 	pi.registerProvider("mergedev", {
 		name: "Merge Dev",
@@ -34,15 +54,7 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	// Resolve vendor and rewrite gateway model ID at request time.
-	// Both pi model IDs (zai/glm-5.3-flash, particle/glm-5.3-flash) map to the
-	// same gateway model. The vendor field selects the execution host.
-	pi.on("before_provider_request", (event) => {
-		const payload = event.payload as Record<string, unknown> | undefined;
-		if (!payload || typeof payload !== "object") return;
-		const piModelId = payload.model as string | undefined;
-		if (!piModelId) return;
-		const resolved = resolveVendorAndModel(payload, piModelId);
-		if (!resolved) return;
-		return { ...resolved.payload, vendor: resolved.vendor };
-	});
+	// Vendor-prefixed pi model IDs (particle/…) map to the same gateway model;
+	// the vendor field selects the execution host so cost display matches billing.
+	pi.on("before_provider_request", (event) => resolveGatewayRequest(event.payload));
 }
