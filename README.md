@@ -20,8 +20,8 @@ Two model IDs for the same gateway model — the vendor field selects the execut
 
 | pi model ID | Gateway model | Vendor | Notes |
 |---|---|---|---|
-| `mergedev/zai/glm-5.3-flash` | `zai/glm-5.3-flash` | Z.AI | More stable |
-| `mergedev/particle/glm-5.3-flash` | `zai/glm-5.3-flash` | Particle | Cheaper, less reliable |
+| `mergedev/zai/glm-5.3-flash` | `zai/glm-5.3-flash` | Z.AI | More stable, no ZDR |
+| `mergedev/particle/glm-5.3-flash` | `zai/glm-5.3-flash` | Particle | Less reliable, supports ZDR |
 
 Pick via `/model` in pi. Both share:
 
