@@ -19,11 +19,9 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { GLM_53_FLASH_VENDOR } from "./pricing.ts";
-import { GLM_53_FLASH_MODEL } from "./models.ts";
-import { pinVendor } from "./routing.ts";
+import { ZAI_GLM_53_FLASH, PARTICLE_GLM_53_FLASH } from "./models.ts";
+import { resolveVendorAndModel } from "./routing.ts";
 
-const MODEL_ID = "zai/glm-5.3-flash";
 const BASE_URL = "https://api-gateway.merge.dev/v1/openai";
 
 export default function (pi: ExtensionAPI) {
@@ -32,16 +30,19 @@ export default function (pi: ExtensionAPI) {
 		baseUrl: BASE_URL,
 		apiKey: "$MERGE_GATEWAY_API_KEY",
 		api: "openai-responses",
-		models: [GLM_53_FLASH_MODEL],
+		models: [ZAI_GLM_53_FLASH, PARTICLE_GLM_53_FLASH],
 	});
 
-	// Pin the routing vendor so the gateway always serves Particle and the
-	// baked-in Particle rates (used by pi to compute cost) stay exact. pi never
-	// surfaces the gateway's response `vendor`/`usage.cost`, so we can't correct
-	// cost after the fact — forcing the host at request time is the reliable fix.
+	// Resolve vendor and rewrite gateway model ID at request time.
+	// Both pi model IDs (zai/glm-5.3-flash, particle/glm-5.3-flash) map to the
+	// same gateway model. The vendor field selects the execution host.
 	pi.on("before_provider_request", (event) => {
 		const payload = event.payload as Record<string, unknown> | undefined;
 		if (!payload || typeof payload !== "object") return;
-		return pinVendor(payload, GLM_53_FLASH_VENDOR, MODEL_ID);
+		const piModelId = payload.model as string | undefined;
+		if (!piModelId) return;
+		const resolved = resolveVendorAndModel(payload, piModelId);
+		if (!resolved) return;
+		return { ...resolved.payload, vendor: resolved.vendor };
 	});
 }

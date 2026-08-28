@@ -18,8 +18,7 @@ const THINKING_LEVEL_MAP = {
 	max: "max",
 } as const;
 
-export const GLM_53_FLASH_MODEL = {
-	id: "zai/glm-5.3-flash",
+const GLM_53_FLASH_BASE = {
 	name: "GLM 5.3 Flash",
 	reasoning: true,
 	input: ["text", "image"],
@@ -36,3 +35,8 @@ export const GLM_53_FLASH_MODEL = {
 		sessionAffinityFormat: "openrouter",
 	},
 } as const;
+
+// Both pi model IDs point to the same gateway model zai/glm-5.3-flash.
+// The vendor field in the request body selects the execution host.
+export const ZAI_GLM_53_FLASH = { ...GLM_53_FLASH_BASE, id: "zai/glm-5.3-flash" } as const;
+export const PARTICLE_GLM_53_FLASH = { ...GLM_53_FLASH_BASE, id: "particle/glm-5.3-flash" } as const;

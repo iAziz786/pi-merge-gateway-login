@@ -1,19 +1,41 @@
 import { describe, it, expect } from "bun:test";
-import { pinVendor } from "./routing.ts";
+import { resolveVendorAndModel } from "./routing.ts";
 
-const MODEL_ID = "zai/glm-5.3-flash";
-
-describe("pinVendor", () => {
-	it("adds the vendor field when the model matches", () => {
-		const out = pinVendor({ model: MODEL_ID, stream: true } as Record<string, unknown>, "particle", MODEL_ID);
-		expect((out as Record<string, unknown>).vendor).toBe("particle");
-		expect(out.stream).toBe(true);
+describe("resolveVendorAndModel", () => {
+	it("maps zai/glm-5.3-flash to vendor zai, no model rewrite", () => {
+		const result = resolveVendorAndModel(
+			{ model: "zai/glm-5.3-flash", stream: true } as Record<string, unknown>,
+			"zai/glm-5.3-flash",
+		);
+		expect(result).not.toBeNull();
+		expect(result!.vendor).toBe("zai");
+		expect(result!.gatewayModelId).toBe("zai/glm-5.3-flash");
+		expect(result!.payload.model).toBe("zai/glm-5.3-flash");
 	});
 
-	it("returns the same payload untouched for other models", () => {
-		const payload = { model: "gpt-4o", stream: true } as Record<string, unknown>;
-		const out = pinVendor(payload, "particle", MODEL_ID);
-		expect(out).toBe(payload);
-		expect((out as Record<string, unknown>).vendor).toBeUndefined();
+	it("maps particle/glm-5.3-flash to vendor particle, rewrites model to zai/glm-5.3-flash", () => {
+		const result = resolveVendorAndModel(
+			{ model: "particle/glm-5.3-flash", stream: true } as Record<string, unknown>,
+			"particle/glm-5.3-flash",
+		);
+		expect(result).not.toBeNull();
+		expect(result!.vendor).toBe("particle");
+		expect(result!.gatewayModelId).toBe("zai/glm-5.3-flash");
+		expect(result!.payload.model).toBe("zai/glm-5.3-flash");
+	});
+
+	it("preserves other payload fields", () => {
+		const result = resolveVendorAndModel(
+			{ model: "particle/glm-5.3-flash", stream: true, max_output_tokens: 4096 } as Record<string, unknown>,
+			"particle/glm-5.3-flash",
+		);
+		expect(result!.payload.stream).toBe(true);
+		expect((result!.payload as any).max_output_tokens).toBe(4096);
+	});
+
+	it("returns null for unknown models", () => {
+		const payload = { model: "gpt-4o", stream: true };
+		const result = resolveVendorAndModel(payload as Record<string, unknown>, "gpt-4o");
+		expect(result).toBeNull();
 	});
 });
