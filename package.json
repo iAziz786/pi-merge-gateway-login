@@ -1,0 +1,18 @@
+{
+  "name": "pi-mergedev-login",
+  "version": "0.1.0",
+  "description": "Pi extension that adds the Merge Dev gateway (docs.merge.dev/merge-gateway) as a model provider via its OpenAI Responses API, hosting a single model: GLM 5.3 Flash.",
+  "keywords": ["pi-package", "extension", "merge-dev", "glm", "zai"],
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": ["./index.ts"]
+  }
+}
