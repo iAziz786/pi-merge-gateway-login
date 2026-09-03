@@ -11,7 +11,7 @@ pi install git:github.com/iAziz786/pi-mergedev-login
 Then authenticate (prompts for your key, stores it in `~/.pi/agent/auth.json`):
 
 ```
-/login mergedev
+/login merge-gateway
 ```
 
 ## Models
@@ -20,10 +20,10 @@ Four model IDs across two gateway models — the vendor field selects the execut
 
 | pi model ID | Gateway model | Vendor | Notes |
 |---|---|---|---|
-| `mergedev/zai/glm-5.3-flash` | `zai/glm-5.3-flash` | Z.AI | More stable, no ZDR |
-| `mergedev/particle/glm-5.3-flash` | `zai/glm-5.3-flash` | Particle | Less reliable, supports ZDR |
-| `mergedev/deepseek/deepseek-v4-flash` | `deepseek/deepseek-v4-flash` | DeepSeek | No ZDR, 2× peak-hour billing (see below) |
-| `mergedev/particle/deepseek-v4-flash` | `deepseek/deepseek-v4-flash` | Particle | Flat pricing, supports ZDR |
+| `merge-gateway/zai/glm-5.3-flash` | `zai/glm-5.3-flash` | Z.AI | More stable, no ZDR |
+| `merge-gateway/particle/glm-5.3-flash` | `zai/glm-5.3-flash` | Particle | Less reliable, supports ZDR |
+| `merge-gateway/deepseek/deepseek-v4-flash` | `deepseek/deepseek-v4-flash` | DeepSeek | No ZDR, 2× peak-hour billing (see below) |
+| `merge-gateway/particle/deepseek-v4-flash` | `deepseek/deepseek-v4-flash` | Particle | Flat pricing, supports ZDR |
 
 Pick via `/model` in pi. All models support:
 
