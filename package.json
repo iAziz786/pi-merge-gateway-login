@@ -1,15 +1,15 @@
 {
-  "name": "@iaziz786/pi-mergedev-login",
-  "version": "0.2.1",
+  "name": "@iaziz786/pi-merge-gateway-login",
+  "version": "0.2.2",
   "description": "Pi extension that adds the Merge Dev gateway (docs.merge.dev/merge-gateway) as a model provider via its OpenAI Responses API, hosting a single model: GLM 5.3 Flash.",
-  "keywords": ["pi-package", "extension", "merge-dev", "glm", "zai"],
+  "keywords": ["pi-package", "extension", "merge-gateway", "merge-dev", "glm", "zai"],
   "type": "module",
   "license": "MIT",
   "author": "Mohammad Aziz",
-  "homepage": "https://github.com/iAziz786/pi-mergedev-login#readme",
+  "homepage": "https://github.com/iAziz786/pi-merge-gateway-login#readme",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/iAziz786/pi-mergedev-login.git"
+    "url": "git+ssh://git@github.com/iAziz786/pi-merge-gateway-login.git"
   },
   "main": "./dist/index.js",
   "files": ["dist", "README.md", "LICENSE"],

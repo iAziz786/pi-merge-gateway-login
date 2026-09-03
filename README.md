@@ -1,13 +1,13 @@
-# pi-mergedev-login
+# pi-merge-gateway-login
 
 [pi](https://github.com/earendil-works/pi-mono) extension that adds the [Merge Dev gateway](https://docs.merge.dev/merge-gateway/) as a model provider through its [OpenAI Responses API](https://docs.merge.dev/merge-gateway/).
 
 ## Install
 
 ```bash
-pi install npm:@iaziz786/pi-mergedev-login
+pi install npm:@iaziz786/pi-merge-gateway-login
 # or from git:
-pi install git:github.com/iAziz786/pi-mergedev-login
+pi install git:github.com/iAziz786/pi-merge-gateway-login
 ```
 
 Then authenticate (prompts for your key, stores it in `~/.pi/agent/auth.json`):
