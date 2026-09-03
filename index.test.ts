@@ -1,5 +1,20 @@
 import { describe, it, expect } from "bun:test";
+import registerExtension from "./index.ts";
 import { resolveGatewayRequest } from "./index.ts";
+
+describe("provider registration", () => {
+	it("registers under the merge-gateway id", () => {
+		const registered: string[] = [];
+		const pi = {
+			registerProvider: (id: string) => {
+				registered.push(id);
+			},
+			on: () => {},
+		};
+		registerExtension(pi as never);
+		expect(registered).toEqual(["merge-gateway"]);
+	});
+});
 
 describe("resolveGatewayRequest (before_provider_request handler)", () => {
 	it("rewrites model and injects vendor for a known pi model id", () => {

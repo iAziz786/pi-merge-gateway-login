@@ -4,7 +4,7 @@
  * OpenAI Responses API (via Merge Dev gateway):
  *   baseUrl: https://api-gateway.merge.dev/v1/openai
  *   endpoint: /responses (→ https://api-gateway.merge.dev/v1/openai/responses)
- *   auth:    Bearer <key>  (stored via `/login mergedev`, or $MERGE_GATEWAY_API_KEY)
+ *   auth:    Bearer <key>  (stored via `/login merge-gateway`, or $MERGE_GATEWAY_API_KEY)
  *
  * We use /v1/openai (not /v1) so OpenAI-only fields like prompt_cache_key and
  * prompt_cache_retention are properly forwarded to the upstream provider rather
@@ -45,7 +45,7 @@ export function resolveGatewayRequest(
 }
 
 export default function (pi: ExtensionAPI) {
-	pi.registerProvider("mergedev", {
+	pi.registerProvider("merge-gateway", {
 		name: "Merge Dev",
 		baseUrl: BASE_URL,
 		apiKey: "$MERGE_GATEWAY_API_KEY",
