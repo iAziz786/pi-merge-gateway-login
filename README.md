@@ -5,6 +5,8 @@
 ## Install
 
 ```bash
+pi install npm:@iaziz786/pi-mergedev-login
+# or from git:
 pi install git:github.com/iAziz786/pi-mergedev-login
 ```
 
@@ -13,6 +15,8 @@ Then authenticate (prompts for your key, stores it in `~/.pi/agent/auth.json`):
 ```
 /login merge-gateway
 ```
+
+Permissions: outbound HTTPS to `api-gateway.merge.dev` only. No filesystem or subprocess access. Key stored by pi in `~/.pi/agent/auth.json`.
 
 ## Models
 
