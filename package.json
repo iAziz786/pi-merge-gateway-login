@@ -1,10 +1,18 @@
 {
-  "name": "pi-mergedev-login",
-  "version": "0.1.0",
+  "name": "@iaziz786/pi-mergedev-login",
+  "version": "0.2.1",
   "description": "Pi extension that adds the Merge Dev gateway (docs.merge.dev/merge-gateway) as a model provider via its OpenAI Responses API, hosting a single model: GLM 5.3 Flash.",
   "keywords": ["pi-package", "extension", "merge-dev", "glm", "zai"],
   "type": "module",
   "license": "MIT",
+  "author": "Mohammad Aziz",
+  "homepage": "https://github.com/iAziz786/pi-mergedev-login#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/iAziz786/pi-mergedev-login.git"
+  },
+  "main": "./dist/index.js",
+  "files": ["dist", "README.md", "LICENSE"],
   "engines": {
     "node": ">=20.0.0"
   },
@@ -12,7 +20,12 @@
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*"
   },
+  "scripts": {
+    "build": "bun build ./index.ts --outdir ./dist --target node --format esm --external '@earendil-works/*'",
+    "prepublishOnly": "bun run build && bun test",
+    "test": "bun test"
+  },
   "pi": {
-    "extensions": ["./index.ts"]
+    "extensions": ["./dist/index.js"]
   }
 }
