@@ -3,16 +3,24 @@ import registerExtension from "./index.ts";
 import { resolveGatewayRequest } from "./index.ts";
 
 describe("provider registration", () => {
-	it("registers under the merge-gateway id", () => {
-		const registered: string[] = [];
+	function captureConfig() {
+		const configs: Record<string, Record<string, unknown>> = {};
 		const pi = {
-			registerProvider: (id: string) => {
-				registered.push(id);
+			registerProvider: (id: string, config: Record<string, unknown>) => {
+				configs[id] = config;
 			},
 			on: () => {},
 		};
 		registerExtension(pi as never);
-		expect(registered).toEqual(["merge-gateway"]);
+		return configs;
+	}
+
+	it("registers under the merge-gateway id", () => {
+		expect(Object.keys(captureConfig())).toEqual(["merge-gateway"]);
+	});
+
+	it("passes apiKey as env var name without $ prefix", () => {
+		expect(captureConfig()["merge-gateway"]?.["apiKey"]).toBe("MERGE_GATEWAY_API_KEY");
 	});
 });
 

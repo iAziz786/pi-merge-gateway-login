@@ -60,7 +60,7 @@ export default function (pi: ExtensionAPI) {
 	pi.registerProvider("merge-gateway", {
 		name: "Merge Dev",
 		baseUrl: BASE_URL,
-		apiKey: "$MERGE_GATEWAY_API_KEY",
+		apiKey: "MERGE_GATEWAY_API_KEY",
 		api: "openai-responses",
 		models: [...ALL_MODELS],
 	});
