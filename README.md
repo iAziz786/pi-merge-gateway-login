@@ -32,7 +32,7 @@ Four model IDs across two gateway models — the vendor field selects the execut
 Pick via `/model` in pi. All models support:
 
 - **Reasoning:** effort levels `low` / `high` / `max` (plus intermediate pi levels, folded per vendor)
-- **Prompt caching:** automatic via `X-Session-Id` header (Z.AI and DeepSeek are automatic-cache routes)
+- **Prompt caching:** automatic (Z.AI and DeepSeek are automatic-cache routes). Gateway ignores `X-Session-Id` header, respects body `prompt_cache_key`. Extension injects pi session ID as `prompt_cache_key` for Particle vendors only; existing keys preserved.
 
 ### GLM 5.3 Flash
 

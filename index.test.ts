@@ -57,3 +57,44 @@ describe("resolveGatewayRequest (before_provider_request handler)", () => {
 		expect(resolveGatewayRequest({ model: "gpt-4o", stream: true })).toBeUndefined();
 	});
 });
+
+describe("resolveGatewayRequest particle-only prompt_cache_key", () => {
+	it("adds prompt_cache_key from sessionId for particle/glm-5.3-flash", () => {
+		const out = resolveGatewayRequest({ model: "particle/glm-5.3-flash", stream: true }, "sess-123");
+		expect(out).toEqual({
+			model: "zai/glm-5.3-flash",
+			vendor: "particle",
+			stream: true,
+			prompt_cache_key: "sess-123",
+		});
+	});
+
+	it("adds prompt_cache_key from sessionId for particle/deepseek-v4-flash", () => {
+		const out = resolveGatewayRequest({ model: "particle/deepseek-v4-flash", stream: true }, "sess-abc");
+		expect(out?.prompt_cache_key).toBe("sess-abc");
+		expect(out?.vendor).toBe("particle");
+	});
+
+	it("does not add prompt_cache_key for zai/glm-5.3-flash even with sessionId", () => {
+		const out = resolveGatewayRequest({ model: "zai/glm-5.3-flash", stream: true }, "sess-123");
+		expect(out).not.toHaveProperty("prompt_cache_key");
+	});
+
+	it("does not add prompt_cache_key for deepseek/deepseek-v4-flash even with sessionId", () => {
+		const out = resolveGatewayRequest({ model: "deepseek/deepseek-v4-flash", stream: true }, "sess-123");
+		expect(out).not.toHaveProperty("prompt_cache_key");
+	});
+
+	it("does not overwrite existing prompt_cache_key for particle", () => {
+		const out = resolveGatewayRequest(
+			{ model: "particle/glm-5.3-flash", stream: true, prompt_cache_key: "pi-key" },
+			"sess-123",
+		);
+		expect(out?.prompt_cache_key).toBe("pi-key");
+	});
+
+	it("does not add prompt_cache_key when sessionId missing or empty", () => {
+		expect(resolveGatewayRequest({ model: "particle/glm-5.3-flash" })).not.toHaveProperty("prompt_cache_key");
+		expect(resolveGatewayRequest({ model: "particle/glm-5.3-flash" }, "")).not.toHaveProperty("prompt_cache_key");
+	});
+});
