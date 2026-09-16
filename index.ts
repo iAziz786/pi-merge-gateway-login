@@ -5,6 +5,9 @@
  *   baseUrl: https://api-gateway.merge.dev/v1/openai
  *   endpoint: /responses (→ https://api-gateway.merge.dev/v1/openai/responses)
  *   auth:    Bearer <key>  (stored via `/login merge-gateway`, or $MERGE_GATEWAY_API_KEY)
+ *            When the env var is set it takes precedence for that process;
+ *            unset it (and remove any models.yml apiKey override) to use the
+ *            stored `/login` credential.
  *
  * We use /v1/openai (not /v1) so OpenAI-only fields like prompt_cache_key and
  * prompt_cache_retention are properly forwarded to the upstream provider rather
@@ -21,9 +24,9 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { ALL_MODELS } from "./models.ts";
 import { resolveVendorAndModel } from "./routing.ts";
+import { loginMergeGateway } from "./login.ts";
 
 const BASE_URL = "https://api-gateway.merge.dev/v1/openai";
-
 /**
  * Rewrites the outgoing request for the Merge Dev gateway: resolves the vendor
  * and overwrites `model` with the real gateway model ID. For `particle` vendor
@@ -63,6 +66,10 @@ export default function (pi: ExtensionAPI) {
 		apiKey: "MERGE_GATEWAY_API_KEY",
 		api: "openai-responses",
 		models: [...ALL_MODELS],
+		oauth: {
+			name: "Merge Dev",
+			login: loginMergeGateway,
+		},
 	});
 
 	// Resolve vendor and rewrite gateway model ID at request time.

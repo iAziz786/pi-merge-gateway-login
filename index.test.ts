@@ -2,8 +2,11 @@ import { describe, it, expect } from "bun:test";
 import registerExtension from "./index.ts";
 import { resolveGatewayRequest } from "./index.ts";
 
-describe("provider registration", () => {
-	function captureConfig() {
+function captureConfig(env?: string) {
+	const prev = process.env.MERGE_GATEWAY_API_KEY;
+	if (env === undefined) delete process.env.MERGE_GATEWAY_API_KEY;
+	else process.env.MERGE_GATEWAY_API_KEY = env;
+	try {
 		const configs: Record<string, Record<string, unknown>> = {};
 		const pi = {
 			registerProvider: (id: string, config: Record<string, unknown>) => {
@@ -13,14 +16,78 @@ describe("provider registration", () => {
 		};
 		registerExtension(pi as never);
 		return configs;
+	} finally {
+		if (prev === undefined) delete process.env.MERGE_GATEWAY_API_KEY;
+		else process.env.MERGE_GATEWAY_API_KEY = prev;
 	}
+}
 
+describe("provider registration", () => {
 	it("registers under the merge-gateway id", () => {
-		expect(Object.keys(captureConfig())).toEqual(["merge-gateway"]);
+		expect(Object.keys(captureConfig("mg__test"))).toEqual(["merge-gateway"]);
 	});
 
-	it("passes apiKey as env var name without $ prefix", () => {
+	it("passes the env var name so host resolves it", () => {
+		expect(captureConfig("mg__test_env_key")["merge-gateway"]?.["apiKey"]).toBe("MERGE_GATEWAY_API_KEY");
+	});
+
+	it("keeps apiKey declared when env is missing (host falls back to stored login)", () => {
 		expect(captureConfig()["merge-gateway"]?.["apiKey"]).toBe("MERGE_GATEWAY_API_KEY");
+	});
+});
+
+describe("oauth login", () => {
+	function getLogin() {
+		const oauth = captureConfig()["merge-gateway"]?.["oauth"] as
+			| { name: string; login: (callbacks: Record<string, unknown>) => Promise<string> }
+			| undefined;
+		if (typeof oauth?.login !== "function") throw new Error("oauth.login not registered");
+		return oauth;
+	}
+
+	it("registers oauth for /login support", () => {
+		expect(getLogin().name).toBe("Merge Dev");
+	});
+
+	it("returns the trimmed key after validation", async () => {
+		const seen: { url: unknown; authorization: unknown }[] = [];
+		const key = await getLogin().login({
+			onPrompt: async () => "  mg__test_key  ",
+			onAuth: () => {},
+			fetch: (async (url: unknown, init: { headers?: Record<string, string> }) => {
+				seen.push({ url, authorization: init?.headers?.["Authorization"] });
+				return { ok: true, status: 200 };
+			}) as never,
+		} as never);
+		expect(key).toBe("mg__test_key");
+		expect(seen).toHaveLength(1);
+		expect(String(seen[0]?.url)).toContain("/models");
+		expect(seen[0]?.authorization).toBe("Bearer mg__test_key");
+	});
+
+	it("throws on invalid key without returning it", async () => {
+		await expect(
+			getLogin().login({
+				onPrompt: async () => "mg__bad",
+				onAuth: () => {},
+				fetch: (async () => ({ ok: false, status: 401 })) as never,
+			} as never),
+		).rejects.toThrow("401");
+	});
+
+	it("throws on empty input without validating", async () => {
+		let fetched = false;
+		await expect(
+			getLogin().login({
+				onPrompt: async () => "   ",
+				onAuth: () => {},
+				fetch: (async () => {
+					fetched = true;
+					return { ok: true, status: 200 };
+				}) as never,
+			} as never),
+		).rejects.toThrow();
+		expect(fetched).toBe(false);
 	});
 });
 
