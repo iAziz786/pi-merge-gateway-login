@@ -1,18 +1,27 @@
 /**
- * GLM-5.3 Flash (zai/glm-5.3-flash) pricing via the Merge Dev gateway.
+ * Per-1M-token USD rates for the models this provider exposes: the card of the
+ * host the Merge Dev gateway routes each model to today, verified against the
+ * gateway's own `usage.cost` on live probes (`x-merge-vendor` names the host).
  *
- * Per-1M-token USD rates for the **Particle** vendor/host, from
- * https://docs.merge.dev/merge-gateway/models/details/zai-glm-5-3-flash
- * (Particle is the cheapest of the three listed hosts: Particle / Z.AI / Baseten).
+ * Requests are unpinned by design, so the host is the gateway's choice and can
+ * move — and with it the bill:
  *
- * Cache-write is not billed on the Particle host, so it is 0.
+ * - `deepseek/deepseek-v4-flash` and `deepseek/deepseek-v4.1-flash` route to
+ *   Fireworks AI today ($0.22/$0.66/cache $0.007). The same models span DeepSeek
+ *   ($0.15/$0.60/cache $0.003, 2x during weekday peak hours 01:00-04:00 and
+ *   06:00-10:00 UTC, weekends never peak), Particle ($0.20/$0.80 while its promo
+ *   runs, $0.30/$1.20 after) and Baseten ($0.30/$1.20).
+ * - `zai/glm-5.3-flash` and `deepseek/deepseek-v4-flash-0731` route to Particle.
+ *
+ * Cache-read rates differ per host, and agent sessions are mostly cache reads,
+ * so a host change skews the displayed cost harder than the input/output delta
+ * suggests. Reconcile against `usage.cost` in the response when it must be
+ * exact.
+ *
+ * Cache-write is not billed on any of these routes, so it is 0.
  */
 
-// Vendor/host this pricing is pinned to. The Merge Dev gateway can route a
-// request to any of its hosts (Particle / Z.AI / Baseten); the rates below are
-// the Particle ones, so displayed cost is accurate only when Particle serves.
-export const GLM_53_FLASH_VENDOR = "particle" as const;
-
+/** GLM 5.3 Flash (zai/glm-5.3-flash) — Particle host. */
 export const GLM_53_FLASH_COST = {
 	input: 0.015,
 	output: 0.05,
@@ -21,44 +30,20 @@ export const GLM_53_FLASH_COST = {
 } as const;
 
 /**
- * DeepSeek V4 Flash (deepseek/deepseek-v4-flash) pricing via the Merge Dev
- * gateway, per vendor/host, from
- * https://docs.merge.dev/merge-gateway/models/details/deepseek-deepseek-v4-flash
+ * DeepSeek V4 Flash (deepseek/deepseek-v4-flash) — Fireworks AI host.
  *
- * Particle is flat (no peak hours) and supports ZDR. The official DeepSeek
- * host bills 2× the baseline during peak hours (01:00–04:00, 06:00–10:00 UTC;
- * weekends are never peak). The rates below are the off-peak baseline, so for
- * the `deepseek` variant the displayed cost is a lower bound during weekday
- * peaks.
+ * The DeepSeek host serves this retired id with V4.1 Flash weights; measurements
+ * against `usage.cost` matched the Fireworks card exactly ($0.22 in, $0.66 out,
+ * $0.007 cache read).
  */
-export const DEEPSEEK_V4_FLASH_COSTS = {
-	deepseek: { input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 },
-	particle: { input: 0.035, output: 0.07, cacheRead: 0.007, cacheWrite: 0 },
+export const DEEPSEEK_V4_FLASH_COST = {
+	input: 0.22,
+	output: 0.66,
+	cacheRead: 0.007,
+	cacheWrite: 0,
 } as const;
 
-/**
- * DeepSeek V4.1 Flash (deepseek/deepseek-v4.1-flash) pricing via the Merge Dev
- * gateway, per vendor/host, from
- * https://docs.merge.dev/merge-gateway/models/details/deepseek-deepseek-v4-1-flash
- *
- * Fireworks AI is flat. Particle's $0.20/$0.80 is a 33% promo off $0.30/$1.20
- * that ends Nov 1, 2026, so past that date the displayed Particle cost is a
- * lower bound. Cache-write is not billed on either route, so it is 0.
- */
-export const DEEPSEEK_V4_1_FLASH_COSTS = {
-	particle: { input: 0.2, output: 0.8, cacheRead: 0.03, cacheWrite: 0 },
-	fireworks: { input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 },
-} as const;
-
-/**
- * DeepSeek V4 Flash 0731 (deepseek/deepseek-v4-flash-0731) pricing via the
- * Merge Dev gateway, from
- * https://docs.merge.dev/merge-gateway/models/details/deepseek-deepseek-v4-flash-0731
- *
- * The Particle host is the only vendor registered here; its flat rates match
- * the floating deepseek/deepseek-v4-flash id. Cache-write is not billed, so it
- * is 0.
- */
+/** DeepSeek V4 Flash 0731 (deepseek/deepseek-v4-flash-0731) — Particle host. */
 export const DEEPSEEK_V4_FLASH_0731_COST = {
 	input: 0.035,
 	output: 0.07,
@@ -66,19 +51,10 @@ export const DEEPSEEK_V4_FLASH_0731_COST = {
 	cacheWrite: 0,
 } as const;
 
-/**
- * Pricing for the gateway-routed entries (canonical ids, no host pin): the
- * gateway picks the vendor, so these are the rates of the host it routes to by
- * default (measured with GET /v1/models plus live probes).
- *
- * - deepseek/deepseek-v4.1-flash  -> DeepSeek (2x peak hours 01:00-04:00 and
- *   06:00-10:00 UTC; weekends never peak), so the display is the off-peak
- *   baseline and a lower bound during weekday peaks.
- * - deepseek/deepseek-v4-flash-0731 -> Particle (flat).
- *
- * pi's cost display is exact only while the gateway keeps choosing that host.
- */
-export const GATEWAY_ROUTED_COSTS = {
-	"deepseek/deepseek-v4.1-flash": { input: 0.15, output: 0.6, cacheRead: 0.003, cacheWrite: 0 },
-	"deepseek/deepseek-v4-flash-0731": { input: 0.035, output: 0.07, cacheRead: 0.007, cacheWrite: 0 },
+/** DeepSeek V4.1 Flash (deepseek/deepseek-v4.1-flash) — Fireworks AI host. */
+export const DEEPSEEK_V4_1_FLASH_COST = {
+	input: 0.22,
+	output: 0.66,
+	cacheRead: 0.007,
+	cacheWrite: 0,
 } as const;

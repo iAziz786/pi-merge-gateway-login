@@ -92,51 +92,7 @@ describe("oauth login", () => {
 });
 
 describe("resolveGatewayRequest (before_provider_request handler)", () => {
-	it("rewrites model and injects vendor for a known pi model id", () => {
-		const out = resolveGatewayRequest({ model: "particle/glm-5.3-flash", stream: true });
-		expect(out).toEqual({
-			model: "zai/glm-5.3-flash",
-			vendor: "particle",
-			stream: true,
-		});
-	});
-
-	it("does not mutate the caller's payload", () => {
-		const payload = { model: "particle/glm-5.3-flash", stream: true };
-		resolveGatewayRequest(payload);
-		expect(payload.model).toBe("particle/glm-5.3-flash");
-		expect(payload).not.toHaveProperty("vendor");
-	});
-
-	it("returns undefined when payload is undefined", () => {
-		expect(resolveGatewayRequest(undefined)).toBeUndefined();
-	});
-
-	it("returns undefined when payload is null", () => {
-		expect(resolveGatewayRequest(null)).toBeUndefined();
-	});
-
-	it("returns undefined when payload is not an object", () => {
-		expect(resolveGatewayRequest("zai/glm-5.3-flash")).toBeUndefined();
-	});
-
-	it("returns undefined when payload.model is missing", () => {
-		expect(resolveGatewayRequest({ stream: true })).toBeUndefined();
-	});
-
-	it("returns undefined when payload.model is not a string", () => {
-		expect(resolveGatewayRequest({ model: 42 })).toBeUndefined();
-	});
-
-	it("returns undefined for models not in VENDOR_MAP (other providers untouched)", () => {
-		expect(resolveGatewayRequest({ model: "gpt-4o", stream: true })).toBeUndefined();
-	});
-
-	it("leaves gateway-routed ids untouched when there is no session", () => {
-		expect(resolveGatewayRequest({ model: "deepseek/deepseek-v4.1-flash", stream: true })).toBeUndefined();
-	});
-
-	it("adds only the session key for gateway-routed ids (no vendor pin)", () => {
+	it("adds the session key and leaves the model id untouched", () => {
 		expect(resolveGatewayRequest({ model: "deepseek/deepseek-v4.1-flash", stream: true }, "sess-gw")).toEqual({
 			model: "deepseek/deepseek-v4.1-flash",
 			stream: true,
@@ -144,59 +100,45 @@ describe("resolveGatewayRequest (before_provider_request handler)", () => {
 		});
 	});
 
-	it("does not overwrite an existing key on a gateway-routed id", () => {
+	it("does not mutate the caller's payload", () => {
+		const payload = { model: "deepseek/deepseek-v4.1-flash", stream: true };
+		resolveGatewayRequest(payload, "sess-gw");
+		expect(payload).not.toHaveProperty("prompt_cache_key");
+	});
+
+	it("returns undefined when payload is undefined", () => {
+		expect(resolveGatewayRequest(undefined, "sess-gw")).toBeUndefined();
+	});
+
+	it("returns undefined when payload is null", () => {
+		expect(resolveGatewayRequest(null, "sess-gw")).toBeUndefined();
+	});
+
+	it("returns undefined when payload is not an object", () => {
+		expect(resolveGatewayRequest("zai/glm-5.3-flash", "sess-gw")).toBeUndefined();
+	});
+
+	it("returns undefined when payload.model is missing", () => {
+		expect(resolveGatewayRequest({ stream: true }, "sess-gw")).toBeUndefined();
+	});
+
+	it("returns undefined when payload.model is not a string", () => {
+		expect(resolveGatewayRequest({ model: 42 }, "sess-gw")).toBeUndefined();
+	});
+
+	it("leaves other providers' models untouched", () => {
+		expect(resolveGatewayRequest({ model: "gpt-4o", stream: true }, "sess-gw")).toBeUndefined();
+		expect(resolveGatewayRequest({ model: "particle/deepseek-v4.1-flash" }, "sess-gw")).toBeUndefined();
+	});
+
+	it("returns undefined when the payload already carries a key", () => {
 		expect(
-			resolveGatewayRequest(
-				{ model: "deepseek/deepseek-v4-flash-0731", prompt_cache_key: "pi-key" },
-				"sess-gw",
-			),
+			resolveGatewayRequest({ model: "deepseek/deepseek-v4-flash-0731", prompt_cache_key: "pi-key" }, "sess-gw"),
 		).toBeUndefined();
 	});
-});
 
-describe("resolveGatewayRequest session prompt_cache_key", () => {
-	it("adds prompt_cache_key from sessionId for particle/glm-5.3-flash", () => {
-		const out = resolveGatewayRequest({ model: "particle/glm-5.3-flash", stream: true }, "sess-123");
-		expect(out).toEqual({
-			model: "zai/glm-5.3-flash",
-			vendor: "particle",
-			stream: true,
-			prompt_cache_key: "sess-123",
-		});
-	});
-
-	it("adds prompt_cache_key from sessionId for particle/deepseek-v4-flash", () => {
-		const out = resolveGatewayRequest({ model: "particle/deepseek-v4-flash", stream: true }, "sess-abc");
-		expect(out?.prompt_cache_key).toBe("sess-abc");
-		expect(out?.vendor).toBe("particle");
-	});
-
-	it("adds prompt_cache_key from sessionId for fireworks/deepseek-v4.1-flash", () => {
-		const out = resolveGatewayRequest({ model: "fireworks/deepseek-v4.1-flash", stream: true }, "sess-fw");
-		expect(out?.prompt_cache_key).toBe("sess-fw");
-		expect(out?.vendor).toBe("fireworks");
-	});
-
-	it("does not add prompt_cache_key for zai/glm-5.3-flash even with sessionId", () => {
-		const out = resolveGatewayRequest({ model: "zai/glm-5.3-flash", stream: true }, "sess-123");
-		expect(out).not.toHaveProperty("prompt_cache_key");
-	});
-
-	it("does not add prompt_cache_key for deepseek/deepseek-v4-flash even with sessionId", () => {
-		const out = resolveGatewayRequest({ model: "deepseek/deepseek-v4-flash", stream: true }, "sess-123");
-		expect(out).not.toHaveProperty("prompt_cache_key");
-	});
-
-	it("does not overwrite existing prompt_cache_key for particle", () => {
-		const out = resolveGatewayRequest(
-			{ model: "particle/glm-5.3-flash", stream: true, prompt_cache_key: "pi-key" },
-			"sess-123",
-		);
-		expect(out?.prompt_cache_key).toBe("pi-key");
-	});
-
-	it("does not add prompt_cache_key when sessionId missing or empty", () => {
-		expect(resolveGatewayRequest({ model: "particle/glm-5.3-flash" })).not.toHaveProperty("prompt_cache_key");
-		expect(resolveGatewayRequest({ model: "particle/glm-5.3-flash" }, "")).not.toHaveProperty("prompt_cache_key");
+	it("returns undefined when the session id is missing or empty", () => {
+		expect(resolveGatewayRequest({ model: "zai/glm-5.3-flash" })).toBeUndefined();
+		expect(resolveGatewayRequest({ model: "zai/glm-5.3-flash" }, "")).toBeUndefined();
 	});
 });

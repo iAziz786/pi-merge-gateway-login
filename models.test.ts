@@ -1,170 +1,85 @@
 import { describe, it, expect } from "bun:test";
 import {
-	ZAI_GLM_53_FLASH,
-	PARTICLE_GLM_53_FLASH,
-	DEEPSEEK_V4_FLASH_MODELS,
-	PARTICLE_DEEPSEEK_V4_1_FLASH,
-	FIREWORKS_DEEPSEEK_V4_1_FLASH,
-	PARTICLE_DEEPSEEK_V4_FLASH_0731,
-	GATEWAY_ROUTED_MODELS,
+	GLM_53_FLASH,
+	DEEPSEEK_V4_FLASH,
+	DEEPSEEK_V4_FLASH_0731,
+	DEEPSEEK_V4_1_FLASH,
+	ALL_MODELS,
 } from "./models.ts";
 
-describe("Z.AI GLM 5.3 Flash", () => {
-	it("has gateway model id zai/glm-5.3-flash", () => {
-		expect(ZAI_GLM_53_FLASH.id).toBe("zai/glm-5.3-flash");
-	});
-
-	it("sends x-session-id header for automatic caching", () => {
-		expect(ZAI_GLM_53_FLASH.compat.sessionAffinityFormat).toBe("openrouter");
-	});
-
-	it("supports reasoning with effort levels", () => {
-		expect(ZAI_GLM_53_FLASH.reasoning).toBe(true);
-		expect(ZAI_GLM_53_FLASH.compat.supportsReasoningEffort).toBe(true);
-	});
-
-	it("maps thinking levels to upstream values", () => {
-		const map = ZAI_GLM_53_FLASH.thinkingLevelMap;
-		expect(map.off).toBeNull();
-		expect(map.low).toBe("low");
-		expect(map.medium).toBe("high");
-		expect(map.high).toBe("high");
-		expect(map.max).toBe("max");
-	});
-});
-
-describe("Particle GLM 5.3 Flash", () => {
-	it("has pi model id particle/glm-5.3-flash", () => {
-		expect(PARTICLE_GLM_53_FLASH.id).toBe("particle/glm-5.3-flash");
-	});
-
-	it("shares identical config with Z.AI variant", () => {
-		expect(PARTICLE_GLM_53_FLASH.reasoning).toBe(ZAI_GLM_53_FLASH.reasoning);
-		expect(PARTICLE_GLM_53_FLASH.contextWindow).toBe(ZAI_GLM_53_FLASH.contextWindow);
-		expect(PARTICLE_GLM_53_FLASH.maxTokens).toBe(ZAI_GLM_53_FLASH.maxTokens);
-		expect(PARTICLE_GLM_53_FLASH.cost).toEqual(ZAI_GLM_53_FLASH.cost);
-		expect(PARTICLE_GLM_53_FLASH.compat).toEqual(ZAI_GLM_53_FLASH.compat);
-	});
-});
-
-describe("DeepSeek V4 Flash models", () => {
-	it("exports one model per vendor (no Empiriolabs)", () => {
-		const ids = DEEPSEEK_V4_FLASH_MODELS.map((m) => m.id).sort();
-		expect(ids).toEqual([
+describe("registered models", () => {
+	it("uses the gateway's own model ids, one per gateway model", () => {
+		expect(ALL_MODELS.map((m) => m.id)).toEqual([
+			"zai/glm-5.3-flash",
 			"deepseek/deepseek-v4-flash",
-			"particle/deepseek-v4-flash",
-		]);
-	});
-
-	it("each model has identical non-vendor config", () => {
-		for (const m of DEEPSEEK_V4_FLASH_MODELS) {
-			expect(m.name).toBe("DeepSeek V4 Flash");
-			expect(m.reasoning).toBe(true);
-			// Exact gateway route limits (GET /v1/models).
-			expect(m.contextWindow).toBe(1_048_576);
-			expect(m.maxTokens).toBe(384_000);
-			expect(m.input).toEqual(["text"]);
-		}
-	});
-
-	it("supports reasoning with effort levels", () => {
-		for (const m of DEEPSEEK_V4_FLASH_MODELS) {
-			expect(m.compat.supportsReasoningEffort).toBe(true);
-			expect(m.compat.sessionAffinityFormat).toBe("openrouter");
-		}
-	});
-
-	it("maps thinking levels to upstream values", () => {
-		for (const m of DEEPSEEK_V4_FLASH_MODELS) {
-			expect(m.thinkingLevelMap.off).toBe("none");
-			expect(m.thinkingLevelMap.minimal).toBe("minimal");
-			expect(m.thinkingLevelMap.low).toBe("low");
-			expect(m.thinkingLevelMap.medium).toBe("medium");
-			expect(m.thinkingLevelMap.high).toBe("high");
-			expect(m.thinkingLevelMap.xhigh).toBe("xhigh");
-			expect(m.thinkingLevelMap.max).toBe("max");
-		}
-	});
-
-	it("has per-vendor costs baked in", () => {
-		const byId = new Map(DEEPSEEK_V4_FLASH_MODELS.map((m) => [m.id, m]));
-		expect(byId.get("deepseek/deepseek-v4-flash")!.cost.input).toBe(0.22);
-		expect(byId.get("particle/deepseek-v4-flash")!.cost.input).toBe(0.035);
-	});
-});
-
-describe("DeepSeek V4 Flash 0731", () => {
-	it("is the Particle route for the July snapshot", () => {
-		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.id).toBe("particle/deepseek-v4-flash-0731");
-		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.name).toBe("DeepSeek V4 Flash 0731");
-		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.cost).toEqual({
-			input: 0.035,
-			output: 0.07,
-			cacheRead: 0.007,
-			cacheWrite: 0,
-		});
-		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.contextWindow).toBe(1_048_576);
-		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.maxTokens).toBe(384_000);
-		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.input).toEqual(["text"]);
-	});
-});
-
-describe("DeepSeek V4.1 Flash models", () => {
-	const models = [PARTICLE_DEEPSEEK_V4_1_FLASH, FIREWORKS_DEEPSEEK_V4_1_FLASH];
-
-	it("exports one model per vendor", () => {
-		expect(models.map((m) => m.id).sort()).toEqual([
-			"fireworks/deepseek-v4.1-flash",
-			"particle/deepseek-v4.1-flash",
-		]);
-	});
-
-	it("carries the gateway route limits and image input on both vendors", () => {
-		for (const m of models) {
-			expect(m.name).toBe("DeepSeek V4.1 Flash");
-			expect(m.reasoning).toBe(true);
-			expect(m.contextWindow).toBe(1_000_000);
-			expect(m.maxTokens).toBe(384_000);
-			expect(m.input).toEqual(["text", "image"]);
-		}
-	});
-
-	it("has per-vendor costs baked in", () => {
-		expect(PARTICLE_DEEPSEEK_V4_1_FLASH.cost.input).toBe(0.2);
-		expect(PARTICLE_DEEPSEEK_V4_1_FLASH.cost.output).toBe(0.8);
-		expect(FIREWORKS_DEEPSEEK_V4_1_FLASH.cost.input).toBe(0.22);
-		expect(FIREWORKS_DEEPSEEK_V4_1_FLASH.cost.output).toBe(0.66);
-		expect(FIREWORKS_DEEPSEEK_V4_1_FLASH.cost.cacheRead).toBe(0.007);
-	});
-});
-
-describe("gateway-routed models", () => {
-	const byId = new Map(GATEWAY_ROUTED_MODELS.map((m) => [m.id, m]));
-
-	it("uses the canonical gateway ids", () => {
-		expect(GATEWAY_ROUTED_MODELS.map((m) => m.id).sort()).toEqual([
 			"deepseek/deepseek-v4-flash-0731",
 			"deepseek/deepseek-v4.1-flash",
 		]);
 	});
 
-	it("is marked as gateway routing in the picker name", () => {
-		for (const m of GATEWAY_ROUTED_MODELS) expect(m.name).toMatch(/\(gateway routing\)$/);
+	it("keeps every id wire-valid (no host prefix, no rewrite needed)", () => {
+		const hosts = new Set(["particle", "fireworks", "deepseek", "zai", "baseten", "makora", "together-ai"]);
+		for (const model of ALL_MODELS) {
+			const [author, ...rest] = model.id.split("/");
+			expect(rest.length, `${model.id} must stay "author/name"`).toBe(1);
+			expect(hosts.has(author), `${model.id} must not encode a custom host`).toBe(true);
+		}
 	});
 
-	it("carries the gateway limits and default-host costs", () => {
-		const v41 = byId.get("deepseek/deepseek-v4.1-flash")!;
-		expect(v41.contextWindow).toBe(1_000_000);
-		expect(v41.maxTokens).toBe(384_000);
-		expect(v41.input).toEqual(["text", "image"]);
-		expect(v41.cost.input).toBe(0.15);
-		expect(v41.cost.output).toBe(0.6);
+	it("pins no host and carries the credentials-independent compat flags", () => {
+		for (const model of ALL_MODELS) {
+			expect(model.compat.supportsReasoningEffort).toBe(true);
+			expect(model.compat.sessionAffinityFormat).toBe("openrouter");
+			expect(model.reasoning).toBe(true);
+		}
+	});
+});
 
-		const v0731 = byId.get("deepseek/deepseek-v4-flash-0731")!;
-		expect(v0731.contextWindow).toBe(1_048_576);
-		expect(v0731.maxTokens).toBe(384_000);
-		expect(v0731.input).toEqual(["text"]);
-		expect(v0731.cost.input).toBe(0.035);
-		expect(v0731.cost.output).toBe(0.07);
+describe("GLM 5.3 Flash", () => {
+	it("keeps the Z.AI route limits and folds pi levels onto low/high/max", () => {
+		expect(GLM_53_FLASH.contextWindow).toBe(1_000_000);
+		expect(GLM_53_FLASH.maxTokens).toBe(131072);
+		expect(GLM_53_FLASH.input).toEqual(["text", "image"]);
+		expect(GLM_53_FLASH.thinkingLevelMap.off).toBeNull();
+		expect(GLM_53_FLASH.thinkingLevelMap.minimal).toBe("low");
+		expect(GLM_53_FLASH.thinkingLevelMap.medium).toBe("high");
+		expect(GLM_53_FLASH.thinkingLevelMap.xhigh).toBe("max");
+		expect(GLM_53_FLASH.cost).toEqual({ input: 0.015, output: 0.05, cacheRead: 0.003, cacheWrite: 0 });
+	});
+});
+
+describe("DeepSeek V4 Flash", () => {
+	it("carries the gateway limits and the host's rates", () => {
+		expect(DEEPSEEK_V4_FLASH.contextWindow).toBe(1_048_576);
+		expect(DEEPSEEK_V4_FLASH.maxTokens).toBe(384_000);
+		expect(DEEPSEEK_V4_FLASH.input).toEqual(["text"]);
+		expect(DEEPSEEK_V4_FLASH.cost).toEqual({ input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 });
+	});
+
+	it("takes the full reasoning ladder", () => {
+		for (const level of ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const) {
+			expect(DEEPSEEK_V4_FLASH.thinkingLevelMap[level]).not.toBeUndefined();
+		}
+		expect(DEEPSEEK_V4_FLASH.thinkingLevelMap.off).toBe("none");
+		expect(DEEPSEEK_V4_FLASH.thinkingLevelMap.max).toBe("max");
+	});
+});
+
+describe("DeepSeek V4 Flash 0731", () => {
+	it("is the July snapshot on Particle pricing", () => {
+		expect(DEEPSEEK_V4_FLASH_0731.name).toBe("DeepSeek V4 Flash 0731");
+		expect(DEEPSEEK_V4_FLASH_0731.contextWindow).toBe(1_048_576);
+		expect(DEEPSEEK_V4_FLASH_0731.maxTokens).toBe(384_000);
+		expect(DEEPSEEK_V4_FLASH_0731.input).toEqual(["text"]);
+		expect(DEEPSEEK_V4_FLASH_0731.cost).toEqual({ input: 0.035, output: 0.07, cacheRead: 0.007, cacheWrite: 0 });
+	});
+});
+
+describe("DeepSeek V4.1 Flash", () => {
+	it("carries image input and the host's rates", () => {
+		expect(DEEPSEEK_V4_1_FLASH.contextWindow).toBe(1_000_000);
+		expect(DEEPSEEK_V4_1_FLASH.maxTokens).toBe(384_000);
+		expect(DEEPSEEK_V4_1_FLASH.input).toEqual(["text", "image"]);
+		expect(DEEPSEEK_V4_1_FLASH.cost).toEqual({ input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 });
 	});
 });
