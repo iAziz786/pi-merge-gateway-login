@@ -59,11 +59,10 @@ Per-1M-token USD costs from the [model details page](https://docs.merge.dev/merg
 | DeepSeek (official) | $0.22 | $0.66 | $0.007 |
 | Particle | $0.035 | $0.07 | $0.007 |
 
-> **Peak-hour note:** the official DeepSeek host bills **2× baseline** during peak
-> hours (01:00–04:00 and 06:00–10:00 UTC). **Weekends are never peak.** pi shows
-> the off-peak baseline, so for `deepseek/deepseek-v4-flash` the displayed cost is
-> a lower bound during weekday peaks. Particle is flat and supports ZDR — prefer
-> it unless you specifically need the official host.
+> **Official-host caveat:** the gateway catalog no longer lists the DeepSeek host for
+> this id (only Particle and Empiriolabs), so `merge-gateway/deepseek/deepseek-v4-flash`
+> can refuse with `vendor_unavailable` / `vendor_restrictions_unavailable`. Use the
+> Particle route.
 
 ### DeepSeek V4 Flash 0731
 
