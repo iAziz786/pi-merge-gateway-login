@@ -1,7 +1,7 @@
 {
   "name": "@iaziz786/pi-merge-gateway-login",
-  "version": "0.5.0",
-  "description": "Pi extension that adds the Merge Dev gateway (docs.merge.dev/merge-gateway) as a model provider via its OpenAI Responses API, hosting GLM 5.3 Flash and DeepSeek V4 Flash / V4.1 Flash routes.",
+  "version": "0.6.0",
+  "description": "Pi extension that adds the Merge Dev gateway (docs.merge.dev/merge-gateway) as a model provider via its OpenAI Responses API, serving GLM 5.3 Flash and DeepSeek V4 Flash / V4.1 Flash under the gateway's own model ids, with the gateway choosing the host.",
   "keywords": ["pi-package", "extension", "merge-gateway", "merge-dev", "glm", "zai", "deepseek", "deepseek-v4"],
   "type": "module",
   "license": "MIT",
