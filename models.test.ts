@@ -6,6 +6,7 @@ import {
 	PARTICLE_DEEPSEEK_V4_1_FLASH,
 	FIREWORKS_DEEPSEEK_V4_1_FLASH,
 	PARTICLE_DEEPSEEK_V4_FLASH_0731,
+	GATEWAY_ROUTED_MODELS,
 } from "./models.ts";
 
 describe("Z.AI GLM 5.3 Flash", () => {
@@ -134,5 +135,36 @@ describe("DeepSeek V4.1 Flash models", () => {
 		expect(FIREWORKS_DEEPSEEK_V4_1_FLASH.cost.input).toBe(0.22);
 		expect(FIREWORKS_DEEPSEEK_V4_1_FLASH.cost.output).toBe(0.66);
 		expect(FIREWORKS_DEEPSEEK_V4_1_FLASH.cost.cacheRead).toBe(0.007);
+	});
+});
+
+describe("gateway-routed models", () => {
+	const byId = new Map(GATEWAY_ROUTED_MODELS.map((m) => [m.id, m]));
+
+	it("uses the canonical gateway ids", () => {
+		expect(GATEWAY_ROUTED_MODELS.map((m) => m.id).sort()).toEqual([
+			"deepseek/deepseek-v4-flash-0731",
+			"deepseek/deepseek-v4.1-flash",
+		]);
+	});
+
+	it("is marked as gateway routing in the picker name", () => {
+		for (const m of GATEWAY_ROUTED_MODELS) expect(m.name).toMatch(/\(gateway routing\)$/);
+	});
+
+	it("carries the gateway limits and default-host costs", () => {
+		const v41 = byId.get("deepseek/deepseek-v4.1-flash")!;
+		expect(v41.contextWindow).toBe(1_000_000);
+		expect(v41.maxTokens).toBe(384_000);
+		expect(v41.input).toEqual(["text", "image"]);
+		expect(v41.cost.input).toBe(0.15);
+		expect(v41.cost.output).toBe(0.6);
+
+		const v0731 = byId.get("deepseek/deepseek-v4-flash-0731")!;
+		expect(v0731.contextWindow).toBe(1_048_576);
+		expect(v0731.maxTokens).toBe(384_000);
+		expect(v0731.input).toEqual(["text"]);
+		expect(v0731.cost.input).toBe(0.035);
+		expect(v0731.cost.output).toBe(0.07);
 	});
 });

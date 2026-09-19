@@ -31,6 +31,19 @@ const VENDOR_MAP: Record<string, { vendor: string; gatewayModelId: string }> = {
 	},
 };
 
+/**
+ * Canonical gateway model ids that are deliberately left unpinned: the gateway
+ * picks the host. They already are gateway model ids, so no request rewrite is
+ * needed — which is what makes them usable from pi/omp side requests (title
+ * generation, compaction summarization, handoff) that skip the
+ * `before_provider_request` hook and would otherwise send a vendor-prefixed id
+ * the gateway rejects with 404.
+ */
+export const GATEWAY_ROUTED_IDS: Record<string, true> = {
+	"deepseek/deepseek-v4.1-flash": true,
+	"deepseek/deepseek-v4-flash-0731": true,
+};
+
 export function resolveVendorAndModel<T extends Record<string, unknown>>(
 	payload: T,
 	piModelId: string,

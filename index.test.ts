@@ -131,6 +131,27 @@ describe("resolveGatewayRequest (before_provider_request handler)", () => {
 	it("returns undefined for models not in VENDOR_MAP (other providers untouched)", () => {
 		expect(resolveGatewayRequest({ model: "gpt-4o", stream: true })).toBeUndefined();
 	});
+
+	it("leaves gateway-routed ids untouched when there is no session", () => {
+		expect(resolveGatewayRequest({ model: "deepseek/deepseek-v4.1-flash", stream: true })).toBeUndefined();
+	});
+
+	it("adds only the session key for gateway-routed ids (no vendor pin)", () => {
+		expect(resolveGatewayRequest({ model: "deepseek/deepseek-v4.1-flash", stream: true }, "sess-gw")).toEqual({
+			model: "deepseek/deepseek-v4.1-flash",
+			stream: true,
+			prompt_cache_key: "sess-gw",
+		});
+	});
+
+	it("does not overwrite an existing key on a gateway-routed id", () => {
+		expect(
+			resolveGatewayRequest(
+				{ model: "deepseek/deepseek-v4-flash-0731", prompt_cache_key: "pi-key" },
+				"sess-gw",
+			),
+		).toBeUndefined();
+	});
 });
 
 describe("resolveGatewayRequest session prompt_cache_key", () => {

@@ -4,6 +4,7 @@ import {
 	DEEPSEEK_V4_FLASH_COSTS,
 	DEEPSEEK_V4_1_FLASH_COSTS,
 	DEEPSEEK_V4_FLASH_0731_COST,
+	GATEWAY_ROUTED_COSTS,
 } from "./pricing.ts";
 
 describe("GLM-5.3 Flash pricing", () => {
@@ -57,5 +58,23 @@ describe("DeepSeek V4 Flash 0731 pricing", () => {
 		expect(DEEPSEEK_V4_FLASH_0731_COST.output).toBe(0.07);
 		expect(DEEPSEEK_V4_FLASH_0731_COST.cacheRead).toBe(0.007);
 		expect(DEEPSEEK_V4_FLASH_0731_COST.cacheWrite).toBe(0);
+	});
+});
+
+describe("gateway-routed pricing", () => {
+	it("uses the DeepSeek host's off-peak rates for V4.1 Flash", () => {
+		const cost = GATEWAY_ROUTED_COSTS["deepseek/deepseek-v4.1-flash"];
+		expect(cost.input).toBe(0.15);
+		expect(cost.output).toBe(0.6);
+		expect(cost.cacheRead).toBe(0.003);
+		expect(cost.cacheWrite).toBe(0);
+	});
+
+	it("uses Particle's rates for V4 Flash 0731", () => {
+		const cost = GATEWAY_ROUTED_COSTS["deepseek/deepseek-v4-flash-0731"];
+		expect(cost.input).toBe(0.035);
+		expect(cost.output).toBe(0.07);
+		expect(cost.cacheRead).toBe(0.007);
+		expect(cost.cacheWrite).toBe(0);
 	});
 });

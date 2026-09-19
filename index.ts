@@ -15,8 +15,10 @@
  *
  * Hosts the models Merge Gateway serves this account (GLM 5.3 Flash, DeepSeek
  * V4 Flash, DeepSeek V4 Flash 0731, DeepSeek V4.1 Flash) as registered in
- * models.ts; each pi model ID pins the vendor that executes it. Pricing comes
- * from https://docs.merge.dev/merge-gateway/models/details/<model>.
+ * models.ts. Vendor-prefixed pi model IDs pin the host that executes the
+ * request; canonical gateway model IDs ("gateway routing") are left unpinned
+ * and also work from pi/omp side requests, which skip this hook.
+ * Pricing comes from https://docs.merge.dev/merge-gateway/models/details/<model>.
  *
  * GLM accepts reasoning effort low / high / max; pi's middle levels fold
  * into those. DeepSeek routes take the full none…max ladder.
@@ -24,7 +26,7 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { ALL_MODELS } from "./models.ts";
-import { resolveVendorAndModel } from "./routing.ts";
+import { GATEWAY_ROUTED_IDS, resolveVendorAndModel } from "./routing.ts";
 import { loginMergeGateway } from "./login.ts";
 
 const BASE_URL = "https://api-gateway.merge.dev/v1/openai";
@@ -43,8 +45,14 @@ const SESSION_KEY_VENDORS: Record<string, true> = {
  * Rewrites the outgoing request for the Merge Dev gateway: resolves the vendor
  * and overwrites `model` with the real gateway model ID. For vendors in
  * SESSION_KEY_VENDORS, injects `prompt_cache_key` from the pi session ID when
- * the payload has none. Returns undefined to leave the request untouched
- * (unrelated providers, malformed payloads, or models not in VENDOR_MAP).
+ * the payload has none.
+ *
+ * Gateway-routed ids (GATEWAY_ROUTED_IDS) already are gateway model ids and are
+ * left unpinned; they only gain the session key, so the same payload works from
+ * main turns and from side requests that never reach this hook.
+ *
+ * Returns undefined to leave the request untouched (unrelated providers,
+ * malformed payloads, or models not in VENDOR_MAP).
  *
  * Exported for unit testing.
  */
@@ -56,16 +64,22 @@ export function resolveGatewayRequest(
 	const p = payload as Record<string, unknown>;
 	const piModelId = p.model;
 	if (typeof piModelId !== "string") return undefined;
+	const sessionKey = typeof sessionId === "string" && sessionId.length > 0 ? sessionId : undefined;
 	const resolved = resolveVendorAndModel(p, piModelId);
-	if (!resolved) return undefined;
+	if (!resolved) {
+		if (!GATEWAY_ROUTED_IDS[piModelId] || !sessionKey) return undefined;
+		const routed = { ...p };
+		if (typeof routed.prompt_cache_key === "string" && routed.prompt_cache_key.length > 0) return undefined;
+		routed.prompt_cache_key = sessionKey;
+		return routed;
+	}
 	const out: Record<string, unknown> = { ...resolved.payload, vendor: resolved.vendor };
 	if (
 		SESSION_KEY_VENDORS[resolved.vendor] === true &&
-		typeof sessionId === "string" &&
-		sessionId.length > 0 &&
+		sessionKey &&
 		(typeof out.prompt_cache_key !== "string" || out.prompt_cache_key.length === 0)
 	) {
-		out.prompt_cache_key = sessionId;
+		out.prompt_cache_key = sessionKey;
 	}
 	return out;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { resolveVendorAndModel } from "./routing.ts";
+import { GATEWAY_ROUTED_IDS, resolveVendorAndModel } from "./routing.ts";
 import { ALL_MODELS } from "./models.ts";
 
 describe("resolveVendorAndModel", () => {
@@ -111,30 +111,25 @@ describe("resolveVendorAndModel", () => {
 	});
 });
 
-describe("VENDOR_MAP consistency with ALL_MODELS", () => {
-	it("every registered model id resolves to a vendor", () => {
+describe("VENDOR_MAP and gateway-routed registry consistency with ALL_MODELS", () => {
+	it("every registered model id is either vendor-pinned or gateway-routed", () => {
 		for (const model of ALL_MODELS) {
-			const result = resolveVendorAndModel(
-				{ model: model.id } as Record<string, unknown>,
-				model.id,
-			);
+			const result = resolveVendorAndModel({ model: model.id } as Record<string, unknown>, model.id);
+			if (GATEWAY_ROUTED_IDS[model.id]) {
+				expect(result, `${model.id} must pass through unrewritten`).toBeNull();
+				continue;
+			}
 			expect(result, `no VENDOR_MAP entry for ${model.id}`).not.toBeNull();
 			expect(result!.vendor).toBe(model.id.split("/")[0]);
 		}
 	});
 
-	it("rewritten gateway model id has a matching registered model (no dangling ids)", () => {
-		const registeredGatewayIds = new Set(
-			ALL_MODELS.map((m) =>
-				resolveVendorAndModel({ model: m.id } as Record<string, unknown>, m.id)!.gatewayModelId,
-			),
-		);
+	it("every rewrite target is a registered, wire-valid model id", () => {
+		const registered = new Set(ALL_MODELS.map((m) => m.id));
 		for (const model of ALL_MODELS) {
-			const resolved = resolveVendorAndModel(
-				{ model: model.id } as Record<string, unknown>,
-				model.id,
-			)!;
-			expect(registeredGatewayIds.has(resolved.gatewayModelId)).toBe(true);
+			const resolved = resolveVendorAndModel({ model: model.id } as Record<string, unknown>, model.id);
+			if (!resolved) continue;
+			expect(registered.has(resolved.gatewayModelId), `${resolved.gatewayModelId} not registered`).toBe(true);
 		}
 	});
 });

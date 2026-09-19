@@ -65,3 +65,20 @@ export const DEEPSEEK_V4_FLASH_0731_COST = {
 	cacheRead: 0.007,
 	cacheWrite: 0,
 } as const;
+
+/**
+ * Pricing for the gateway-routed entries (canonical ids, no host pin): the
+ * gateway picks the vendor, so these are the rates of the host it routes to by
+ * default (measured with GET /v1/models plus live probes).
+ *
+ * - deepseek/deepseek-v4.1-flash  -> DeepSeek (2x peak hours 01:00-04:00 and
+ *   06:00-10:00 UTC; weekends never peak), so the display is the off-peak
+ *   baseline and a lower bound during weekday peaks.
+ * - deepseek/deepseek-v4-flash-0731 -> Particle (flat).
+ *
+ * pi's cost display is exact only while the gateway keeps choosing that host.
+ */
+export const GATEWAY_ROUTED_COSTS = {
+	"deepseek/deepseek-v4.1-flash": { input: 0.15, output: 0.6, cacheRead: 0.003, cacheWrite: 0 },
+	"deepseek/deepseek-v4-flash-0731": { input: 0.035, output: 0.07, cacheRead: 0.007, cacheWrite: 0 },
+} as const;
