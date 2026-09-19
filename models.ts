@@ -4,7 +4,12 @@
  * Extracted so the model config (including compat flags) is unit-testable.
  */
 
-import { GLM_53_FLASH_COST, DEEPSEEK_V4_FLASH_COSTS } from "./pricing.ts";
+import {
+	GLM_53_FLASH_COST,
+	DEEPSEEK_V4_FLASH_COSTS,
+	DEEPSEEK_V4_1_FLASH_COSTS,
+	DEEPSEEK_V4_FLASH_0731_COST,
+} from "./pricing.ts";
 
 // Map pi thinking levels to the upstream reasoning effort values
 // (low / high / max). `off: null` disables reasoning when selected.
@@ -82,8 +87,50 @@ export const DEEPSEEK_V4_FLASH_MODELS = [
 	},
 ] as const;
 
+// DeepSeek V4 Flash 0731: the July 31 snapshot of the same gateway model.
+// Single vendor (Particle) on this provider, same route limits and modalities.
+export const PARTICLE_DEEPSEEK_V4_FLASH_0731 = {
+	...DEEPSEEK_V4_FLASH_BASE,
+	id: "particle/deepseek-v4-flash-0731",
+	name: "DeepSeek V4 Flash 0731",
+	cost: { ...DEEPSEEK_V4_FLASH_0731_COST },
+	thinkingLevelMap: DEEPSEEK_EFFORT_MAP,
+} as const;
+
+// DeepSeek V4.1 Flash: one gateway model (deepseek/deepseek-v4.1-flash), two
+// vendors registered here. Both routes take image input and the full ladder.
+const DEEPSEEK_V4_1_FLASH_BASE = {
+	name: "DeepSeek V4.1 Flash",
+	reasoning: true,
+	input: ["text", "image"],
+	contextWindow: 1_000_000,
+	maxTokens: 384_000,
+	compat: {
+		thinkingFormat: "openai",
+		supportsReasoningEffort: true,
+		sessionAffinityFormat: "openrouter",
+	},
+} as const;
+
+export const PARTICLE_DEEPSEEK_V4_1_FLASH = {
+	...DEEPSEEK_V4_1_FLASH_BASE,
+	id: "particle/deepseek-v4.1-flash",
+	cost: { ...DEEPSEEK_V4_1_FLASH_COSTS.particle },
+	thinkingLevelMap: DEEPSEEK_EFFORT_MAP,
+} as const;
+
+export const FIREWORKS_DEEPSEEK_V4_1_FLASH = {
+	...DEEPSEEK_V4_1_FLASH_BASE,
+	id: "fireworks/deepseek-v4.1-flash",
+	cost: { ...DEEPSEEK_V4_1_FLASH_COSTS.fireworks },
+	thinkingLevelMap: DEEPSEEK_EFFORT_MAP,
+} as const;
+
 export const ALL_MODELS = [
 	ZAI_GLM_53_FLASH,
 	PARTICLE_GLM_53_FLASH,
 	...DEEPSEEK_V4_FLASH_MODELS,
+	PARTICLE_DEEPSEEK_V4_1_FLASH,
+	FIREWORKS_DEEPSEEK_V4_1_FLASH,
+	PARTICLE_DEEPSEEK_V4_FLASH_0731,
 ] as const;

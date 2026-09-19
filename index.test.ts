@@ -133,7 +133,7 @@ describe("resolveGatewayRequest (before_provider_request handler)", () => {
 	});
 });
 
-describe("resolveGatewayRequest particle-only prompt_cache_key", () => {
+describe("resolveGatewayRequest session prompt_cache_key", () => {
 	it("adds prompt_cache_key from sessionId for particle/glm-5.3-flash", () => {
 		const out = resolveGatewayRequest({ model: "particle/glm-5.3-flash", stream: true }, "sess-123");
 		expect(out).toEqual({
@@ -148,6 +148,12 @@ describe("resolveGatewayRequest particle-only prompt_cache_key", () => {
 		const out = resolveGatewayRequest({ model: "particle/deepseek-v4-flash", stream: true }, "sess-abc");
 		expect(out?.prompt_cache_key).toBe("sess-abc");
 		expect(out?.vendor).toBe("particle");
+	});
+
+	it("adds prompt_cache_key from sessionId for fireworks/deepseek-v4.1-flash", () => {
+		const out = resolveGatewayRequest({ model: "fireworks/deepseek-v4.1-flash", stream: true }, "sess-fw");
+		expect(out?.prompt_cache_key).toBe("sess-fw");
+		expect(out?.vendor).toBe("fireworks");
 	});
 
 	it("does not add prompt_cache_key for zai/glm-5.3-flash even with sessionId", () => {

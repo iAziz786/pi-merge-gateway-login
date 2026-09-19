@@ -76,6 +76,39 @@ describe("resolveVendorAndModel", () => {
 		expect(result!.gatewayModelId).toBe("deepseek/deepseek-v4-flash");
 		expect(result!.payload.model).toBe("deepseek/deepseek-v4-flash");
 	});
+
+	it("maps particle/deepseek-v4-flash-0731 to vendor particle", () => {
+		const result = resolveVendorAndModel(
+			{ model: "particle/deepseek-v4-flash-0731", stream: true } as Record<string, unknown>,
+			"particle/deepseek-v4-flash-0731",
+		);
+		expect(result).not.toBeNull();
+		expect(result!.vendor).toBe("particle");
+		expect(result!.gatewayModelId).toBe("deepseek/deepseek-v4-flash-0731");
+		expect(result!.payload.model).toBe("deepseek/deepseek-v4-flash-0731");
+	});
+
+	it("maps particle/deepseek-v4.1-flash to vendor particle", () => {
+		const result = resolveVendorAndModel(
+			{ model: "particle/deepseek-v4.1-flash", stream: true } as Record<string, unknown>,
+			"particle/deepseek-v4.1-flash",
+		);
+		expect(result).not.toBeNull();
+		expect(result!.vendor).toBe("particle");
+		expect(result!.gatewayModelId).toBe("deepseek/deepseek-v4.1-flash");
+		expect(result!.payload.model).toBe("deepseek/deepseek-v4.1-flash");
+	});
+
+	it("maps fireworks/deepseek-v4.1-flash to vendor fireworks, same gateway model", () => {
+		const result = resolveVendorAndModel(
+			{ model: "fireworks/deepseek-v4.1-flash", stream: true } as Record<string, unknown>,
+			"fireworks/deepseek-v4.1-flash",
+		);
+		expect(result).not.toBeNull();
+		expect(result!.vendor).toBe("fireworks");
+		expect(result!.gatewayModelId).toBe("deepseek/deepseek-v4.1-flash");
+		expect(result!.payload.model).toBe("deepseek/deepseek-v4.1-flash");
+	});
 });
 
 describe("VENDOR_MAP consistency with ALL_MODELS", () => {

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "bun:test";
-import { GLM_53_FLASH_COST, DEEPSEEK_V4_FLASH_COSTS } from "./pricing.ts";
+import {
+	GLM_53_FLASH_COST,
+	DEEPSEEK_V4_FLASH_COSTS,
+	DEEPSEEK_V4_1_FLASH_COSTS,
+	DEEPSEEK_V4_FLASH_0731_COST,
+} from "./pricing.ts";
 
 describe("GLM-5.3 Flash pricing", () => {
 	it("uses the documented lowest per-1M-token rates", () => {
@@ -27,5 +32,30 @@ describe("DeepSeek V4 Flash pricing", () => {
 
 	it("has no empiriolabs entry", () => {
 		expect(DEEPSEEK_V4_FLASH_COSTS).not.toHaveProperty("empiriolabs");
+	});
+});
+
+describe("DeepSeek V4.1 Flash pricing", () => {
+	it("uses Particle's promo rates (33% off list)", () => {
+		expect(DEEPSEEK_V4_1_FLASH_COSTS.particle.input).toBe(0.2);
+		expect(DEEPSEEK_V4_1_FLASH_COSTS.particle.output).toBe(0.8);
+		expect(DEEPSEEK_V4_1_FLASH_COSTS.particle.cacheRead).toBe(0.03);
+		expect(DEEPSEEK_V4_1_FLASH_COSTS.particle.cacheWrite).toBe(0);
+	});
+
+	it("uses Fireworks AI's flat rates", () => {
+		expect(DEEPSEEK_V4_1_FLASH_COSTS.fireworks.input).toBe(0.22);
+		expect(DEEPSEEK_V4_1_FLASH_COSTS.fireworks.output).toBe(0.66);
+		expect(DEEPSEEK_V4_1_FLASH_COSTS.fireworks.cacheRead).toBe(0.007);
+		expect(DEEPSEEK_V4_1_FLASH_COSTS.fireworks.cacheWrite).toBe(0);
+	});
+});
+
+describe("DeepSeek V4 Flash 0731 pricing", () => {
+	it("uses Particle's flat rates", () => {
+		expect(DEEPSEEK_V4_FLASH_0731_COST.input).toBe(0.035);
+		expect(DEEPSEEK_V4_FLASH_0731_COST.output).toBe(0.07);
+		expect(DEEPSEEK_V4_FLASH_0731_COST.cacheRead).toBe(0.007);
+		expect(DEEPSEEK_V4_FLASH_0731_COST.cacheWrite).toBe(0);
 	});
 });

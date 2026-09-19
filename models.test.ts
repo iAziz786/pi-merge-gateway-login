@@ -3,6 +3,9 @@ import {
 	ZAI_GLM_53_FLASH,
 	PARTICLE_GLM_53_FLASH,
 	DEEPSEEK_V4_FLASH_MODELS,
+	PARTICLE_DEEPSEEK_V4_1_FLASH,
+	FIREWORKS_DEEPSEEK_V4_1_FLASH,
+	PARTICLE_DEEPSEEK_V4_FLASH_0731,
 } from "./models.ts";
 
 describe("Z.AI GLM 5.3 Flash", () => {
@@ -86,5 +89,50 @@ describe("DeepSeek V4 Flash models", () => {
 		const byId = new Map(DEEPSEEK_V4_FLASH_MODELS.map((m) => [m.id, m]));
 		expect(byId.get("deepseek/deepseek-v4-flash")!.cost.input).toBe(0.22);
 		expect(byId.get("particle/deepseek-v4-flash")!.cost.input).toBe(0.035);
+	});
+});
+
+describe("DeepSeek V4 Flash 0731", () => {
+	it("is the Particle route for the July snapshot", () => {
+		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.id).toBe("particle/deepseek-v4-flash-0731");
+		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.name).toBe("DeepSeek V4 Flash 0731");
+		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.cost).toEqual({
+			input: 0.035,
+			output: 0.07,
+			cacheRead: 0.007,
+			cacheWrite: 0,
+		});
+		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.contextWindow).toBe(1_048_576);
+		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.maxTokens).toBe(384_000);
+		expect(PARTICLE_DEEPSEEK_V4_FLASH_0731.input).toEqual(["text"]);
+	});
+});
+
+describe("DeepSeek V4.1 Flash models", () => {
+	const models = [PARTICLE_DEEPSEEK_V4_1_FLASH, FIREWORKS_DEEPSEEK_V4_1_FLASH];
+
+	it("exports one model per vendor", () => {
+		expect(models.map((m) => m.id).sort()).toEqual([
+			"fireworks/deepseek-v4.1-flash",
+			"particle/deepseek-v4.1-flash",
+		]);
+	});
+
+	it("carries the gateway route limits and image input on both vendors", () => {
+		for (const m of models) {
+			expect(m.name).toBe("DeepSeek V4.1 Flash");
+			expect(m.reasoning).toBe(true);
+			expect(m.contextWindow).toBe(1_000_000);
+			expect(m.maxTokens).toBe(384_000);
+			expect(m.input).toEqual(["text", "image"]);
+		}
+	});
+
+	it("has per-vendor costs baked in", () => {
+		expect(PARTICLE_DEEPSEEK_V4_1_FLASH.cost.input).toBe(0.2);
+		expect(PARTICLE_DEEPSEEK_V4_1_FLASH.cost.output).toBe(0.8);
+		expect(FIREWORKS_DEEPSEEK_V4_1_FLASH.cost.input).toBe(0.22);
+		expect(FIREWORKS_DEEPSEEK_V4_1_FLASH.cost.output).toBe(0.66);
+		expect(FIREWORKS_DEEPSEEK_V4_1_FLASH.cost.cacheRead).toBe(0.007);
 	});
 });

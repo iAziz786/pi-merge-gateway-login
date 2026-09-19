@@ -35,3 +35,33 @@ export const DEEPSEEK_V4_FLASH_COSTS = {
 	deepseek: { input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 },
 	particle: { input: 0.035, output: 0.07, cacheRead: 0.007, cacheWrite: 0 },
 } as const;
+
+/**
+ * DeepSeek V4.1 Flash (deepseek/deepseek-v4.1-flash) pricing via the Merge Dev
+ * gateway, per vendor/host, from
+ * https://docs.merge.dev/merge-gateway/models/details/deepseek-deepseek-v4-1-flash
+ *
+ * Fireworks AI is flat. Particle's $0.20/$0.80 is a 33% promo off $0.30/$1.20
+ * that ends Nov 1, 2026, so past that date the displayed Particle cost is a
+ * lower bound. Cache-write is not billed on either route, so it is 0.
+ */
+export const DEEPSEEK_V4_1_FLASH_COSTS = {
+	particle: { input: 0.2, output: 0.8, cacheRead: 0.03, cacheWrite: 0 },
+	fireworks: { input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 },
+} as const;
+
+/**
+ * DeepSeek V4 Flash 0731 (deepseek/deepseek-v4-flash-0731) pricing via the
+ * Merge Dev gateway, from
+ * https://docs.merge.dev/merge-gateway/models/details/deepseek-deepseek-v4-flash-0731
+ *
+ * The Particle host is the only vendor registered here; its flat rates match
+ * the floating deepseek/deepseek-v4-flash id. Cache-write is not billed, so it
+ * is 0.
+ */
+export const DEEPSEEK_V4_FLASH_0731_COST = {
+	input: 0.035,
+	output: 0.07,
+	cacheRead: 0.007,
+	cacheWrite: 0,
+} as const;
