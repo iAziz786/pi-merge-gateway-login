@@ -1,0 +1,8 @@
+name = "jev-bridge"
+main = "src/index.ts"
+compatibility_date = "2026-09-19"
+workers_dev = true
+
+# Secrets (optional; see src/index.ts):
+#   wrangler secret put MERGE_GATEWAY_API_KEY
+#   wrangler secret put BRIDGE_TOKEN
