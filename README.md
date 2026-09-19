@@ -90,6 +90,35 @@ Also note the retired `deepseek/deepseek-v4-flash` id: whichever host serves it,
 response comes back as V4.1 Flash (`x-merge-model: deepseek/deepseek-v4.1-flash`). Pick
 `deepseek/deepseek-v4-flash-0731` to stay on the July snapshot.
 
+## Jev (TypeSafe) judgments in omp
+
+omp ships a TypeSafe judge it uses for thinking-level detection, Smart unexpected-stop
+detection, git AI staging, and the `judge()` helper in eval cells. The gateway serves the
+same System One contract, but at `/v1/decisions` under the model `typesafe/jev-1.13`
+while the client posts to `/v1/systemone` and defaults to `jev-latest`, so
+`tools/jev-bridge.ts` adapts path and model id:
+
+```bash
+MERGE_GATEWAY_API_KEY=… bun tools/jev-bridge.ts   # keep it running (loopback only)
+```
+
+```bash
+# ~/.omp/agent/.env — omp loads this into $env at startup
+TYPESAFE_BASE_URL=http://127.0.0.1:8787
+TYPESAFE_API_KEY=<the same gateway key>
+TYPESAFE_DEFAULT_MODEL=typesafe/jev-1.13
+```
+
+With the env key present, `AuthStorage.hasAuth("typesafe")` is satisfied, so the default
+`providers.judgmentProvider: auto` sends those judgments to Jev through the gateway
+instead of the `tiny`/`smol` chat fallback. Jev is not a chat model — it never appears in
+`/model`, and chat side requests (titles, compaction) are unaffected. Billing is
+$0.042/M input tokens with output free; omp's ledger shows $0 for these calls because the
+judgment usage mapper reads token counts, not the gateway's `usage.cost`.
+
+The bridge is repo-local tooling; the npm tarball ships `dist`, `README.md` and
+`LICENSE` only.
+
 ## Endpoint
 
 ```
