@@ -25,9 +25,9 @@ Four model IDs, one per gateway model, using the gateway's own model IDs:
 | pi model ID | Model | Host the gateway picks today |
 |---|---|---|
 | `merge-gateway/zai/glm-5.3-flash` | GLM 5.3 Flash | Particle |
-| `merge-gateway/deepseek/deepseek-v4-flash` | DeepSeek V4 Flash | DeepSeek (V4.1 weights) |
+| `merge-gateway/deepseek/deepseek-v4-flash` | DeepSeek V4 Flash (retired id, serves V4.1 weights) | Fireworks AI |
 | `merge-gateway/deepseek/deepseek-v4-flash-0731` | DeepSeek V4 Flash 0731 | Particle |
-| `merge-gateway/deepseek/deepseek-v4.1-flash` | DeepSeek V4.1 Flash | DeepSeek |
+| `merge-gateway/deepseek/deepseek-v4.1-flash` | DeepSeek V4.1 Flash | Fireworks AI |
 
 Pick via `/model` in pi. Requests are **not pinned to a host**: the gateway picks. That
 is deliberate — pi and omp generate session titles, compaction summaries, and handoff
@@ -78,12 +78,17 @@ so use the gateway dashboard when a number has to be exact.
 
 ## Routing and zero data retention
 
-The gateway picks the host per request (this account routes to the cheapest listed
-host today). Without a host pin there is no per-session control over *where* a request
-runs, so ZDR cannot be enforced from the model picker — use the organization's routing
-policy or vendor allow/deny lists in the gateway dashboard. Both the Particle and
-Fireworks hosts support ZDR; the DeepSeek host does not, and the two DeepSeek models
-above currently route there.
+The gateway picks the host per request — today GLM 5.3 Flash and V4 Flash 0731 route to
+Particle, the two V4.1-family entries to Fireworks AI. Without a host pin there is no
+per-session control over *where* a request runs, so ZDR cannot be enforced from the
+model picker: both Particle and Fireworks AI support ZDR, the DeepSeek host does not,
+and the gateway can move a request to any host it considers eligible. Use the
+organization's routing policy or vendor allow/deny lists in the gateway dashboard when
+a workload must stay on a specific host.
+
+Also note the retired `deepseek/deepseek-v4-flash` id: whichever host serves it, the
+response comes back as V4.1 Flash (`x-merge-model: deepseek/deepseek-v4.1-flash`). Pick
+`deepseek/deepseek-v4-flash-0731` to stay on the July snapshot.
 
 ## Endpoint
 
