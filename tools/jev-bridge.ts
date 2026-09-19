@@ -20,6 +20,9 @@
  * the tiny/smol chat fallback. `TYPESAFE_DEFAULT_MODEL` is still rewritten below
  * to the gateway id, so a stale value cannot silently fall back.
  *
+ * The same env block backs the `decide` tool in iAziz786/omp-jev-decision,
+ * which asks Jev typed questions on demand mid-session.
+ *
  * Repo-local tool; the npm tarball ships `dist`/README/LICENSE only.
  */
 
