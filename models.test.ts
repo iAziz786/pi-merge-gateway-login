@@ -56,15 +56,10 @@ describe("DeepSeek V4 Flash models", () => {
 		for (const m of DEEPSEEK_V4_FLASH_MODELS) {
 			expect(m.name).toBe("DeepSeek V4 Flash");
 			expect(m.reasoning).toBe(true);
-			expect(m.contextWindow).toBe(1_000_000);
-			expect(m.maxTokens).toBe(393216);
+			// Exact gateway route limits (GET /v1/models).
+			expect(m.contextWindow).toBe(1_048_576);
+			expect(m.maxTokens).toBe(384_000);
 			expect(m.input).toEqual(["text"]);
-		}
-	});
-
-	it("uses Particle's max output (384K) for all variants", () => {
-		for (const m of DEEPSEEK_V4_FLASH_MODELS) {
-			expect(m.maxTokens).toBe(384 * 1024);
 		}
 	});
 
@@ -78,9 +73,11 @@ describe("DeepSeek V4 Flash models", () => {
 	it("maps thinking levels to upstream values", () => {
 		for (const m of DEEPSEEK_V4_FLASH_MODELS) {
 			expect(m.thinkingLevelMap.off).toBe("none");
+			expect(m.thinkingLevelMap.minimal).toBe("minimal");
 			expect(m.thinkingLevelMap.low).toBe("low");
 			expect(m.thinkingLevelMap.medium).toBe("medium");
 			expect(m.thinkingLevelMap.high).toBe("high");
+			expect(m.thinkingLevelMap.xhigh).toBe("xhigh");
 			expect(m.thinkingLevelMap.max).toBe("max");
 		}
 	});
