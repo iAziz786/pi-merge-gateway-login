@@ -1,6 +1,6 @@
 {
   "name": "@iaziz786/pi-merge-gateway-login",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "Pi extension that adds the Merge Dev gateway (docs.merge.dev/merge-gateway) as a model provider via its OpenAI Responses API: every chat-capable model from the gateway catalog, priced at the vendor that actually serves each request.",
   "keywords": [
     "pi-package",
