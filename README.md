@@ -37,6 +37,12 @@ vendor-prefixed IDs this extension used to register failed exactly there: `404 M
 'fireworks/deepseek-v4.1-flash' is not supported`, after which compaction fell through
 to its largest-context fallback model and died on that model's output cap).
 
+That is also why there is one entry per gateway model rather than one per vendor: pi
+keys models by ID alone, so a per-vendor entry would need an invented ID that the
+gateway rejects on those unhooked side requests. Vendor selection belongs to the
+gateway — set the organization's vendor policy or send `vendor` in the request body —
+and the vendor list below records what each one costs.
+
 All models support:
 
 - **Reasoning:** DeepSeek models take the full `none` … `max` ladder; GLM takes `low` / `high` / `max` (pi's other levels fold into those)
@@ -62,12 +68,16 @@ billed on any of these routes.
 
 Every vendor the gateway may choose instead, from `GET /v1/models`:
 
-| Model | Eligible vendors (input / output / cache read) |
+| Model | Eligible vendors (input / output / cache read per M) |
 |---|---|
-| `zai/glm-5.3-flash` | Particle 0.015/0.05/0.003 · z.ai 0.015/0.05/0.003 · Baseten, Fireworks, Together 0.15/0.50/0.03 · Modal 0.45/1.50/0.09 |
-| `deepseek/deepseek-v4-flash` | resolves to V4.1 Flash (below); the retired id's own list (Particle 0.035/0.07/0.007, Empiriolabs 0.14/0.28) does not bill |
-| `deepseek/deepseek-v4-flash-0731` | Particle 0.035/0.07/0.007 · Makora 0.09/0.195/0.0196 · Baseten 0.13/0.26/0.028 · Empiriolabs 0.14/0.28 · Together 0.14/0.28/0.03 |
+| `zai/glm-5.3-flash` | Particle 0.015/0.05/0.003 · z.ai 0.015/0.05/0.003 · Baseten, Fireworks, Together AI, Wafer 0.15/0.50/0.03 · Modal 0.45/1.50/0.09 |
+| `deepseek/deepseek-v4-flash` | resolved to V4.1 Flash (below) before routing; the two vendors listed on the retired id itself (Particle 0.035/0.07/0.007, Empiriolabs 0.14/0.28) do not bill |
+| `deepseek/deepseek-v4-flash-0731` | Particle 0.035/0.07/0.007 · Makora 0.09/0.195/0.0196 · Baseten 0.13/0.26/0.028 · Together AI 0.14/0.28/0.03 · Empiriolabs 0.14/0.28 |
 | `deepseek/deepseek-v4.1-flash` | DeepSeek 0.15/0.60/0.003 · Particle 0.20/0.80/0.03 · Fireworks 0.22/0.66/0.007 · Baseten 0.30/1.20/0.03 |
+
+Vendors without zero data retention, per the same payload: z.ai and Wafer on GLM 5.3
+Flash, Empiriolabs on V4 Flash 0731, DeepSeek on the V4.1 family — every other vendor
+lists `zero_data_retention: true`.
 
 Two gaps between that table and what pi displays:
 
@@ -90,11 +100,10 @@ gateway dashboard.
 The gateway picks the vendor per request, preferring the cheapest eligible one — today
 GLM 5.3 Flash and V4 Flash 0731 route to Particle, the two V4.1-family entries to
 DeepSeek's own API. Without a vendor pin there is no per-session control over *where* a
-request runs: the default route for the V4.1 family is DeepSeek, which does **not**
-support zero data retention, while Particle, Fireworks, Baseten, Makora and Together do
-(`zero_data_retention` per vendor in `GET /v1/models`). Use the organization's routing
-policy or vendor allow/deny lists in the gateway dashboard when a workload must stay on
-ZDR-capable infrastructure.
+request runs, and the default route for the V4.1 family is a vendor without zero data
+retention (see the vendor list above for which vendors support it). Use the
+organization's routing policy or vendor allow/deny lists in the gateway dashboard when
+a workload must stay on ZDR-capable infrastructure.
 
 Also note the retired `deepseek/deepseek-v4-flash` id: the gateway resolves it to V4.1
 Flash, so the response comes back as V4.1 Flash (`x-merge-model:
