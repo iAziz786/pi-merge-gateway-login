@@ -1,11 +1,14 @@
 /**
- * Model definitions for the Merge Dev gateway provider.
+ * Bundled fallback models for the Merge Dev gateway provider.
  *
- * One entry per gateway model, using the gateway's own model id: requests are
- * left unpinned and the gateway picks the host. Ids stay wire-valid everywhere,
- * including pi/omp side requests (session titles, compaction summarization,
- * handoff), which never run the `before_provider_request` hook and therefore
- * cannot have a rewritten id or a vendor pin applied.
+ * The extension registers the gateway's live catalog (`GET /v1/models`) when it
+ * can reach it; these four are what remains when no API key is available at
+ * startup or the catalog fetch fails. One entry per gateway model, using the
+ * gateway's own model id: requests are left unpinned and the gateway picks the
+ * vendor. Ids stay wire-valid everywhere, including pi/omp side requests
+ * (session titles, compaction summarization, handoff), which never run the
+ * `before_provider_request` hook and therefore cannot have a rewritten id or a
+ * vendor pin applied.
  *
  * Extracted so the model config (including compat flags) is unit-testable.
  */

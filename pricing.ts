@@ -1,10 +1,14 @@
 /**
- * Per-1M-token USD rates for the models this provider exposes: one card per
- * model, priced at the vendor the Merge Dev gateway prefers for it.
+ * Fallback cost cards: one per bundled model, priced at the vendor the Merge Dev
+ * gateway prefers for it.
  *
- * The gateway routes each request to the cheapest eligible vendor of the model
- * and fails over to the next when that vendor cannot take it. Observed on
- * unpinned probes (`x-merge-vendor` names the serving vendor):
+ * These only apply when the gateway's catalog could not be fetched — every live
+ * turn is repriced from the catalog at the vendor that actually served it (see
+ * catalog.ts and the `after_provider_response` hook in index.ts). The gateway
+ * routes each request to the cheapest eligible vendor and fails over to the next
+ * when that vendor cannot take it, so a static card is the common case, never a
+ * guarantee. Observed on unpinned probes (`x-merge-vendor` names the serving
+ * vendor):
  *
  * - V4.1 Flash and the retired V4 Flash id → DeepSeek's own API, the cheapest of
  *   its four vendors (0.15/0.60 against Particle 0.20/0.80, Fireworks
@@ -15,25 +19,11 @@
  *   Makora (0.09/0.195) on two: the preferred vendor alternates, so failover is
  *   real, not hypothetical.
  *
- * Every card is the preferred vendor's published rate, verified against the
- * gateway's own `usage.cost` on cold and cache-hit probes, exact to nine
- * decimals. Two things the display cannot follow:
- *
- * - Failover. pi prices from these cards — one per model, no per-vendor axis —
- *   and never reads `usage.cost`, so a turn on a pricier vendor understates:
- *   Particle is 1.3x DeepSeek's rate for the V4.1 family, Makora is 2.6x
- *   Particle's for V4 Flash 0731, and the 0.15/0.50 vendors are 10x Particle's
- *   for GLM.
- * - DeepSeek's peak windows. Its price sheet lists the base rates below plus a
- *   `schedule` that doubles them (0.30/1.20/cache 0.006) on weekdays 01:00-04:00
- *   and 06:00-10:00 UTC. pi's model configs accept four flat rates — both the
- *   extension `ProviderModelConfig.cost` shape and `models.yml` overrides — so a
- *   peak-hour turn displays half of what is billed. The card carries the base
- *   (off-peak) rates, which the probes verified.
- *
- * Look at `usage.cost` in the response when a number must be exact.
- *
- * Cache-write is not billed on any of these routes, so it is 0.
+ * Each card was verified against the gateway's own `usage.cost` on cold and
+ * cache-hit probes, exact to nine decimals. DeepSeek's own API doubles its rates
+ * inside its weekday peak windows (01:00-04:00 and 06:00-10:00 UTC) — the live
+ * path applies that from the gateway's `schedule`; these flat cards carry the
+ * base rates. Cache-write is not billed on these four routes, so it is 0.
  */
 
 /** GLM 5.3 Flash (zai/glm-5.3-flash) — Particle vendor. */

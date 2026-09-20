@@ -20,16 +20,22 @@ Permissions: outbound HTTPS to `api-gateway.merge.dev` only. No filesystem or su
 
 ## Models
 
-Four model IDs, one per gateway model, using the gateway's own model IDs:
+The extension registers the gateway's own catalog — every chat-capable model it
+serves, under the gateway's model IDs (`GET /v1/models`, ~270 models today, with
+context window, output cap, input modalities, and reasoning ladder per model
+taken from the model's preferred vendor). It is fetched at startup and falls back
+to four bundled models when no API key is available or the gateway cannot be
+reached:
 
-| pi model ID | Model | Vendor the gateway picks today |
+| bundled model ID | Model | Preferred vendor |
 |---|---|---|
 | `merge-gateway/zai/glm-5.3-flash` | GLM 5.3 Flash | Particle |
-| `merge-gateway/deepseek/deepseek-v4-flash` | DeepSeek V4 Flash (retired id, resolved to V4.1) | DeepSeek |
-| `merge-gateway/deepseek/deepseek-v4-flash-0731` | DeepSeek V4 Flash 0731 | Particle, falls over to Makora |
+| `merge-gateway/deepseek/deepseek-v4-flash` | DeepSeek V4 Flash (retired, resolved to V4.1) | DeepSeek |
+| `merge-gateway/deepseek/deepseek-v4-flash-0731` | DeepSeek V4 Flash 0731 | Particle |
 | `merge-gateway/deepseek/deepseek-v4.1-flash` | DeepSeek V4.1 Flash | DeepSeek |
 
-Pick via `/model` in pi. Requests are **not pinned to a vendor**: the gateway picks. That
+Pick via `/model` in pi (`omp models merge-gateway` lists them all). Requests are
+**not pinned to a vendor**: the gateway picks. That
 is deliberate — pi and omp generate session titles, compaction summaries, and handoff
 documents through side requests that never run extension hooks, so a model ID the
 gateway does not recognize, or a field only the hook could add, would break them (the
@@ -37,25 +43,32 @@ vendor-prefixed IDs this extension used to register failed exactly there: `404 M
 'fireworks/deepseek-v4.1-flash' is not supported`, after which compaction fell through
 to its largest-context fallback model and died on that model's output cap).
 
-That is also why there is one entry per gateway model rather than one per vendor: pi
-keys models by ID alone, so a per-vendor entry would need an invented ID that the
-gateway rejects on those unhooked side requests. Vendor selection belongs to the
-gateway — set the organization's vendor policy or send `vendor` in the request body —
-and the vendor list below records what each one costs.
+That is also why there is one entry per model rather than one per vendor: pi keys
+models by ID alone, so a per-vendor entry would need an invented ID that the gateway
+rejects on those unhooked side requests. Vendor selection belongs to the gateway, and
+pricing follows it — see below.
 
 All models support:
 
-- **Reasoning:** DeepSeek models take the full `none` … `max` ladder; GLM takes `low` / `high` / `max` (pi's other levels fold into those)
+- **Reasoning:** the thinking ladder is mapped per model from the vendor's declared effort values (DeepSeek takes the full `none` … `max` ladder; GLM folds onto `low` / `high` / `max`); models whose vendor declares none are registered without effort control
 - **Prompt caching:** automatic. The extension forwards the pi session ID as the body `prompt_cache_key` (the gateway ignores the `X-Session-Id` header on this surface), which keeps a session on the vendor whose prompt cache is warm and namespaces the provider cache key. Existing keys are preserved.
 
 ## Pricing
 
-pi prices every turn from the model's cost card, and the card names the vendor the
-gateway prefers for that model. The gateway routes each request to the **cheapest
-eligible vendor** and fails over to the next when that vendor cannot take the request,
-so the card is the common case, not a hard guarantee.
+The gateway routes each request to the **cheapest eligible vendor** and fails over to
+the next when that vendor cannot take it, so a fixed card per model would drift. The
+extension prices each turn at the vendor that actually served it: `after_provider_response`
+fires before the response stream is consumed — and therefore before pi prices the usage —
+and rewrites the model's rates from that response's `x-merge-vendor` header, using the
+rates from the gateway's own catalog. Input, output, cache-read, and cache-write rates
+all follow the serving vendor, and DeepSeek's peak windows (weekdays 01:00–04:00 and
+06:00–10:00 UTC, 2×) are applied from its `schedule`, so the displayed cost matches the
+gateway's `usage.cost` rather than an estimate.
 
-| Model | Vendor the card prices | Input | Output | Cache read |
+If the catalog could not be fetched, the bundled cards below remain — one per model, at
+the preferred vendor's base rates, which is the route the gateway picks by default.
+
+| Bundle model | Preferred vendor | Input | Output | Cache read |
 |---|---|---|---|---|
 | `zai/glm-5.3-flash` | Particle | $0.015 | $0.05 | $0.003 |
 | `deepseek/deepseek-v4-flash` | DeepSeek | $0.15 | $0.60 | $0.003 |
@@ -63,15 +76,16 @@ so the card is the common case, not a hard guarantee.
 | `deepseek/deepseek-v4.1-flash` | DeepSeek | $0.15 | $0.60 | $0.003 |
 
 Rates are per million tokens and were verified against the gateway's own `usage.cost`
-on live probes — cold and cache-hit turns matched to nine decimals. Cache write is not
-billed on any of these routes.
+on live probes — cold and cache-hit turns matched to nine decimals. Cache writes are
+billed only on some vendors (Anthropic and Bedrock entries, from `cache_write_per_million`).
 
-Every vendor the gateway may choose instead, from `GET /v1/models`:
+Every vendor the gateway may choose, with what it charges, comes from `GET /v1/models`
+and is applied automatically. For the four bundle models:
 
 | Model | Eligible vendors (input / output / cache read per M) |
 |---|---|
 | `zai/glm-5.3-flash` | Particle 0.015/0.05/0.003 · z.ai 0.015/0.05/0.003 · Baseten, Fireworks, Together AI, Wafer 0.15/0.50/0.03 · Modal 0.45/1.50/0.09 |
-| `deepseek/deepseek-v4-flash` | resolved to V4.1 Flash (below) before routing; the two vendors listed on the retired id itself (Particle 0.035/0.07/0.007, Empiriolabs 0.14/0.28) do not bill |
+| `deepseek/deepseek-v4-flash` | resolved to V4.1 Flash before routing, and billed as it |
 | `deepseek/deepseek-v4-flash-0731` | Particle 0.035/0.07/0.007 · Makora 0.09/0.195/0.0196 · Baseten 0.13/0.26/0.028 · Together AI 0.14/0.28/0.03 · Empiriolabs 0.14/0.28 |
 | `deepseek/deepseek-v4.1-flash` | DeepSeek 0.15/0.60/0.003 · Particle 0.20/0.80/0.03 · Fireworks 0.22/0.66/0.007 · Baseten 0.30/1.20/0.03 |
 
@@ -79,21 +93,10 @@ Vendors without zero data retention, per the same payload: z.ai and Wafer on GLM
 Flash, Empiriolabs on V4 Flash 0731, DeepSeek on the V4.1 family — every other vendor
 lists `zero_data_retention: true`.
 
-Two gaps between that table and what pi displays:
-
-- **Failover.** pi prices from one flat card per model and never reads `usage.cost`, so
-  a turn served by a pricier vendor displays low — 1.3x on the V4.1 family, 2.6x on V4
-  Flash 0731, 10x on GLM.
-- **DeepSeek's peak windows.** Its price sheet lists the base rates above plus a
-  `schedule` doubling them (0.30/1.20/cache 0.006) on weekdays 01:00–04:00 and
-  06:00–10:00 UTC. pi's model configs — both the extension model shape and `models.yml`
-  overrides — accept four flat rates with no schedule, so a peak-hour turn displays half
-  of what is billed.
-
-For the real charge, read the response: the body carries `usage.cost` (USD for that
-request) and the headers carry `x-merge-vendor` (the vendor that served it). To force a
-vendor, send `vendor` in the request body or set the organization's vendor policy in the
-gateway dashboard.
+The gateway's own `usage.cost` on a response is the authoritative bill; the headers
+carry `x-merge-vendor` (the vendor that served it) and `x-merge-model` (the model it
+resolved to). To force a vendor, send `vendor` in the request body or set the
+organization's vendor policy in the gateway dashboard.
 
 ## Routing and zero data retention
 
