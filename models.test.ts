@@ -49,11 +49,11 @@ describe("GLM 5.3 Flash", () => {
 });
 
 describe("DeepSeek V4 Flash", () => {
-	it("carries the gateway limits and the host's rates", () => {
+	it("carries the gateway limits and the vendor's rates", () => {
 		expect(DEEPSEEK_V4_FLASH.contextWindow).toBe(1_048_576);
 		expect(DEEPSEEK_V4_FLASH.maxTokens).toBe(384_000);
 		expect(DEEPSEEK_V4_FLASH.input).toEqual(["text"]);
-		expect(DEEPSEEK_V4_FLASH.cost).toEqual({ input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 });
+		expect(DEEPSEEK_V4_FLASH.cost).toEqual(DEEPSEEK_V4_1_FLASH.cost);
 	});
 
 	it("takes the full reasoning ladder", () => {
@@ -76,10 +76,15 @@ describe("DeepSeek V4 Flash 0731", () => {
 });
 
 describe("DeepSeek V4.1 Flash", () => {
-	it("carries image input and the host's rates", () => {
+	it("carries image input and the preferred vendor's rates", () => {
 		expect(DEEPSEEK_V4_1_FLASH.contextWindow).toBe(1_000_000);
 		expect(DEEPSEEK_V4_1_FLASH.maxTokens).toBe(384_000);
 		expect(DEEPSEEK_V4_1_FLASH.input).toEqual(["text", "image"]);
-		expect(DEEPSEEK_V4_1_FLASH.cost).toEqual({ input: 0.22, output: 0.66, cacheRead: 0.007, cacheWrite: 0 });
+		expect(DEEPSEEK_V4_1_FLASH.cost).toEqual({
+			input: 0.15,
+			output: 0.6,
+			cacheRead: 0.003,
+			cacheWrite: 0,
+		});
 	});
 });

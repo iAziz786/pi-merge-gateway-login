@@ -22,14 +22,14 @@ Permissions: outbound HTTPS to `api-gateway.merge.dev` only. No filesystem or su
 
 Four model IDs, one per gateway model, using the gateway's own model IDs:
 
-| pi model ID | Model | Host the gateway picks today |
+| pi model ID | Model | Vendor the gateway picks today |
 |---|---|---|
 | `merge-gateway/zai/glm-5.3-flash` | GLM 5.3 Flash | Particle |
-| `merge-gateway/deepseek/deepseek-v4-flash` | DeepSeek V4 Flash (retired id, serves V4.1 weights) | Fireworks AI |
-| `merge-gateway/deepseek/deepseek-v4-flash-0731` | DeepSeek V4 Flash 0731 | Particle |
-| `merge-gateway/deepseek/deepseek-v4.1-flash` | DeepSeek V4.1 Flash | Fireworks AI |
+| `merge-gateway/deepseek/deepseek-v4-flash` | DeepSeek V4 Flash (retired id, resolved to V4.1) | DeepSeek |
+| `merge-gateway/deepseek/deepseek-v4-flash-0731` | DeepSeek V4 Flash 0731 | Particle, falls over to Makora |
+| `merge-gateway/deepseek/deepseek-v4.1-flash` | DeepSeek V4.1 Flash | DeepSeek |
 
-Pick via `/model` in pi. Requests are **not pinned to a host**: the gateway picks. That
+Pick via `/model` in pi. Requests are **not pinned to a vendor**: the gateway picks. That
 is deliberate — pi and omp generate session titles, compaction summaries, and handoff
 documents through side requests that never run extension hooks, so a model ID the
 gateway does not recognize, or a field only the hook could add, would break them (the
@@ -40,55 +40,66 @@ to its largest-context fallback model and died on that model's output cap).
 All models support:
 
 - **Reasoning:** DeepSeek models take the full `none` … `max` ladder; GLM takes `low` / `high` / `max` (pi's other levels fold into those)
-- **Prompt caching:** automatic. The extension forwards the pi session ID as the body `prompt_cache_key` (the gateway ignores the `X-Session-Id` header on this surface), which keeps a session on the host whose prompt cache is warm and namespaces the provider cache key. Existing keys are preserved.
+- **Prompt caching:** automatic. The extension forwards the pi session ID as the body `prompt_cache_key` (the gateway ignores the `X-Session-Id` header on this surface), which keeps a session on the vendor whose prompt cache is warm and namespaces the provider cache key. Existing keys are preserved.
 
 ## Pricing
 
-Requests are unpinned, so pi displays the rates of the host the gateway routes each
-model to today. Those rates come from the [model catalog](https://docs.merge.dev/merge-gateway/models)
-and were verified against the gateway's own `usage.cost` on live probes (Fireworks,
-Particle) — they matched to the cent.
+pi prices every turn from the model's cost card, and the card names the vendor the
+gateway prefers for that model. The gateway routes each request to the **cheapest
+eligible vendor** and fails over to the next when that vendor cannot take the request,
+so the card is the common case, not a hard guarantee.
 
-| Model | Host today | Input | Output | Cache read |
+| Model | Vendor the card prices | Input | Output | Cache read |
 |---|---|---|---|---|
 | `zai/glm-5.3-flash` | Particle | $0.015 | $0.05 | $0.003 |
-| `deepseek/deepseek-v4-flash` | Fireworks AI | $0.22 | $0.66 | $0.007 |
+| `deepseek/deepseek-v4-flash` | DeepSeek | $0.15 | $0.60 | $0.003 |
 | `deepseek/deepseek-v4-flash-0731` | Particle | $0.035 | $0.07 | $0.007 |
-| `deepseek/deepseek-v4.1-flash` | Fireworks AI | $0.22 | $0.66 | $0.007 |
+| `deepseek/deepseek-v4.1-flash` | DeepSeek | $0.15 | $0.60 | $0.003 |
 
-Cache write is not billed on any of these routes.
+Rates are per million tokens and were verified against the gateway's own `usage.cost`
+on live probes — cold and cache-hit turns matched to nine decimals. Cache write is not
+billed on any of these routes.
 
-The gateway picks the host per request, so the display is only as exact as that
-choice is stable — routing for these models has already moved between hosts in a
-single working session. How far the bill can get from the table:
+Every vendor the gateway may choose instead, from `GET /v1/models`:
 
-- **V4.1 Flash / V4 Flash** span DeepSeek ($0.15 / $0.60 / cache $0.003; 2× on
-  weekday peak hours 01:00–04:00 and 06:00–10:00 UTC, weekends never peak), Particle
-  ($0.20 / $0.80 while its promo runs, $0.30 / $1.20 after) and Baseten ($0.30 /
-  $1.20) — up to 2× either direction.
-- **Cache reads** are where sessions actually spend: the rate differs per host
-  ($0.003/M DeepSeek vs $0.007–0.03/M elsewhere) and caching is provider-side
-  best-effort — repeated identical prefixes were billed at full input rate on some
-  routes.
+| Model | Eligible vendors (input / output / cache read) |
+|---|---|
+| `zai/glm-5.3-flash` | Particle 0.015/0.05/0.003 · z.ai 0.015/0.05/0.003 · Baseten, Fireworks, Together 0.15/0.50/0.03 · Modal 0.45/1.50/0.09 |
+| `deepseek/deepseek-v4-flash` | resolves to V4.1 Flash (below); the retired id's own list (Particle 0.035/0.07/0.007, Empiriolabs 0.14/0.28) does not bill |
+| `deepseek/deepseek-v4-flash-0731` | Particle 0.035/0.07/0.007 · Makora 0.09/0.195/0.0196 · Baseten 0.13/0.26/0.028 · Empiriolabs 0.14/0.28 · Together 0.14/0.28/0.03 |
+| `deepseek/deepseek-v4.1-flash` | DeepSeek 0.15/0.60/0.003 · Particle 0.20/0.80/0.03 · Fireworks 0.22/0.66/0.007 · Baseten 0.30/1.20/0.03 |
 
-To reconcile the real charge, read the response: the body carries `usage.cost` (USD
-for that request) and the headers carry `x-merge-vendor` (the host that served it).
-pi itself does not read `usage.cost` — its display is computed from the table above —
-so use the gateway dashboard when a number has to be exact.
+Two gaps between that table and what pi displays:
+
+- **Failover.** pi prices from one flat card per model and never reads `usage.cost`, so
+  a turn served by a pricier vendor displays low — 1.3x on the V4.1 family, 2.6x on V4
+  Flash 0731, 10x on GLM.
+- **DeepSeek's peak windows.** Its price sheet lists the base rates above plus a
+  `schedule` doubling them (0.30/1.20/cache 0.006) on weekdays 01:00–04:00 and
+  06:00–10:00 UTC. pi's model configs — both the extension model shape and `models.yml`
+  overrides — accept four flat rates with no schedule, so a peak-hour turn displays half
+  of what is billed.
+
+For the real charge, read the response: the body carries `usage.cost` (USD for that
+request) and the headers carry `x-merge-vendor` (the vendor that served it). To force a
+vendor, send `vendor` in the request body or set the organization's vendor policy in the
+gateway dashboard.
 
 ## Routing and zero data retention
 
-The gateway picks the host per request — today GLM 5.3 Flash and V4 Flash 0731 route to
-Particle, the two V4.1-family entries to Fireworks AI. Without a host pin there is no
-per-session control over *where* a request runs, so ZDR cannot be enforced from the
-model picker: both Particle and Fireworks AI support ZDR, the DeepSeek host does not,
-and the gateway can move a request to any host it considers eligible. Use the
-organization's routing policy or vendor allow/deny lists in the gateway dashboard when
-a workload must stay on a specific host.
+The gateway picks the vendor per request, preferring the cheapest eligible one — today
+GLM 5.3 Flash and V4 Flash 0731 route to Particle, the two V4.1-family entries to
+DeepSeek's own API. Without a vendor pin there is no per-session control over *where* a
+request runs: the default route for the V4.1 family is DeepSeek, which does **not**
+support zero data retention, while Particle, Fireworks, Baseten, Makora and Together do
+(`zero_data_retention` per vendor in `GET /v1/models`). Use the organization's routing
+policy or vendor allow/deny lists in the gateway dashboard when a workload must stay on
+ZDR-capable infrastructure.
 
-Also note the retired `deepseek/deepseek-v4-flash` id: whichever host serves it, the
-response comes back as V4.1 Flash (`x-merge-model: deepseek/deepseek-v4.1-flash`). Pick
-`deepseek/deepseek-v4-flash-0731` to stay on the July snapshot.
+Also note the retired `deepseek/deepseek-v4-flash` id: the gateway resolves it to V4.1
+Flash, so the response comes back as V4.1 Flash (`x-merge-model:
+deepseek/deepseek-v4.1-flash`) at V4.1 rates. Pick `deepseek/deepseek-v4-flash-0731` to
+stay on the July snapshot.
 
 ## Jev (TypeSafe) judgments in omp
 

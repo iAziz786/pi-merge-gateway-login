@@ -16,10 +16,11 @@
  * Hosts the models Merge Gateway serves this account (GLM 5.3 Flash, DeepSeek
  * V4 Flash, DeepSeek V4 Flash 0731, DeepSeek V4.1 Flash) as registered in
  * models.ts, under the gateway's own model ids. Requests are not pinned to a
- * host: pi/omp side requests (session titles, compaction summarization,
+ * vendor: pi/omp side requests (session titles, compaction summarization,
  * handoff) never run this extension's hook, so an id the gateway does not know
  * — or a field only the hook could add — would break them. The gateway picks
- * the host and each model entry carries that host's rates (see pricing.ts).
+ * the cheapest eligible vendor and each model entry carries that vendor's rates
+ * (see pricing.ts).
  *
  * GLM accepts reasoning effort low / high / max; pi's middle levels fold
  * into those. DeepSeek models take the full none…max ladder.
