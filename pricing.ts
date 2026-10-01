@@ -14,8 +14,9 @@
  *   its four vendors (0.15/0.60 against Particle 0.20/0.80, Fireworks
  *   0.22/0.66, Baseten 0.30/1.20), 4 of 4 probes.
  * - GLM 5.3 Flash → pareto (0.03/0.10/cache 0.006), the account's only eligible
-   vendor for it: the catalog used to list seven (Particle at 0.015/0.05, tied
-   with z.ai, up to Modal at 0.45/1.50) and now lists this one.
+   vendor for it. Its rates have moved twice (Particle 0.015/0.05 → 0.12/0.40,
+   z.ai 0.015/0.05 → 0.075/0.25, pareto launched 2026-09-22), which is what a
+   static card is for; the live path follows `x-merge-vendor` instead.
  * - V4 Flash 0731 → Particle (0.035/0.07, cheapest of five) on two probes and
  *   Makora (0.09/0.195) on two: the preferred vendor alternates, so failover is
  *   real, not hypothetical.

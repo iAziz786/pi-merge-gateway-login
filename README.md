@@ -91,15 +91,23 @@ and is applied automatically. For the four bundle models:
 
 | Model | Eligible vendors (input / output / cache read per M) |
 |---|---|
-| `zai/glm-5.3-flash` | pareto 0.03/0.10/0.006 — the catalog lists no other vendor for it right now |
+| `zai/glm-5.3-flash` | pareto 0.03/0.10/0.006 (only one this account may route to) · particle 0.12/0.40/0.03 · z.ai 0.075/0.25/0.015 · baseten, fireworks, together AI, wafer 0.15/0.50/0.03 · modal 0.45/1.50/0.09 |
 | `deepseek/deepseek-v4-flash` | resolved to V4.1 Flash before routing, and billed as it |
 | `deepseek/deepseek-v4-flash-0731` | Particle 0.035/0.07/0.007 · Makora 0.09/0.195/0.0196 · Baseten 0.13/0.26/0.028 · Together AI 0.14/0.28/0.03 · Empiriolabs 0.14/0.28 |
 | `deepseek/deepseek-v4.1-flash` | DeepSeek 0.15/0.60/0.003 · Particle 0.20/0.80/0.03 · Fireworks 0.22/0.66/0.007 · Baseten 0.30/1.20/0.03 |
 
 The DeepSeek rows are what the gateway listed while those models were reachable;
 they now return `400 vendor_restrictions_unavailable` on this account. Vendors
-without zero data retention, per the same payload: Empiriolabs on V4 Flash 0731,
-DeepSeek on the V4.1 family — every other vendor lists `zero_data_retention: true`.
+without zero data retention: z.ai and Wafer AI on GLM 5.3 Flash, Empiriolabs on
+V4 Flash 0731, DeepSeek on the V4.1 family — every other vendor lists
+`zero_data_retention: true`.
+
+GLM 5.3 Flash's rates have moved twice: pareto launched 2026-09-22 at
+0.03/0.10, particle went 0.015/0.05 → 0.12/0.40, and z.ai went 0.015/0.05 →
+0.075/0.25. The card in the table above and `GLM_53_FLASH_COST` track pareto,
+which the live path reprices from `x-merge-vendor` regardless — the other
+vendors' numbers there come from Merge's model page, since the API catalog
+hides vendors the organization cannot route to.
 
 The gateway's own `usage.cost` on a response is the authoritative bill; the headers
 carry `x-merge-vendor` (the vendor that served it) and `x-merge-model` (the model it
