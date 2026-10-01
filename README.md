@@ -21,15 +21,22 @@ Permissions: outbound HTTPS to `api-gateway.merge.dev` only. No filesystem or su
 ## Models
 
 The extension registers the gateway's own catalog — every chat-capable model it
-serves, under the gateway's model IDs (`GET /v1/models`, ~270 models today, with
-context window, output cap, input modalities, and reasoning ladder per model
-taken from the model's preferred vendor). It is fetched at startup and falls back
-to four bundled models when no API key is available or the gateway cannot be
-reached:
+serves, under the gateway's model IDs (`GET /v1/models`, with context window,
+output cap, input modalities, and reasoning ladder per model taken from the
+model's preferred vendor). It is fetched at startup and falls back to four
+bundled models when no API key is available or the gateway cannot be reached:
+
+The catalog is scoped to what your organization is allowed to route, and that
+changes: it listed 290 models earlier today and now lists one —
+`zai/glm-5.3-flash` on its new vendor **pareto**, with every other vendor for that
+model (Particle, z.ai, Wafer, Together AI, Baseten, Fireworks, Modal) and every
+DeepSeek model returning `400 vendor_restrictions_unavailable`. Nothing in the
+extension decides that; the organization's vendor and region restrictions in the
+gateway dashboard do.
 
 | bundled model ID | Model | Preferred vendor |
 |---|---|---|
-| `merge-gateway/zai/glm-5.3-flash` | GLM 5.3 Flash | Particle |
+| `merge-gateway/zai/glm-5.3-flash` | GLM 5.3 Flash | pareto |
 | `merge-gateway/deepseek/deepseek-v4-flash` | DeepSeek V4 Flash (retired, resolved to V4.1) | DeepSeek |
 | `merge-gateway/deepseek/deepseek-v4-flash-0731` | DeepSeek V4 Flash 0731 | Particle |
 | `merge-gateway/deepseek/deepseek-v4.1-flash` | DeepSeek V4.1 Flash | DeepSeek |
@@ -70,7 +77,7 @@ the preferred vendor's base rates, which is the route the gateway picks by defau
 
 | Bundle model | Preferred vendor | Input | Output | Cache read |
 |---|---|---|---|---|
-| `zai/glm-5.3-flash` | Particle | $0.015 | $0.05 | $0.003 |
+| `zai/glm-5.3-flash` | pareto | $0.03 | $0.10 | $0.006 |
 | `deepseek/deepseek-v4-flash` | DeepSeek | $0.15 | $0.60 | $0.003 |
 | `deepseek/deepseek-v4-flash-0731` | Particle | $0.035 | $0.07 | $0.007 |
 | `deepseek/deepseek-v4.1-flash` | DeepSeek | $0.15 | $0.60 | $0.003 |
@@ -84,14 +91,15 @@ and is applied automatically. For the four bundle models:
 
 | Model | Eligible vendors (input / output / cache read per M) |
 |---|---|
-| `zai/glm-5.3-flash` | Particle 0.015/0.05/0.003 · z.ai 0.015/0.05/0.003 · Baseten, Fireworks, Together AI, Wafer 0.15/0.50/0.03 · Modal 0.45/1.50/0.09 |
+| `zai/glm-5.3-flash` | pareto 0.03/0.10/0.006 — the catalog lists no other vendor for it right now |
 | `deepseek/deepseek-v4-flash` | resolved to V4.1 Flash before routing, and billed as it |
 | `deepseek/deepseek-v4-flash-0731` | Particle 0.035/0.07/0.007 · Makora 0.09/0.195/0.0196 · Baseten 0.13/0.26/0.028 · Together AI 0.14/0.28/0.03 · Empiriolabs 0.14/0.28 |
 | `deepseek/deepseek-v4.1-flash` | DeepSeek 0.15/0.60/0.003 · Particle 0.20/0.80/0.03 · Fireworks 0.22/0.66/0.007 · Baseten 0.30/1.20/0.03 |
 
-Vendors without zero data retention, per the same payload: z.ai and Wafer on GLM 5.3
-Flash, Empiriolabs on V4 Flash 0731, DeepSeek on the V4.1 family — every other vendor
-lists `zero_data_retention: true`.
+The DeepSeek rows are what the gateway listed while those models were reachable;
+they now return `400 vendor_restrictions_unavailable` on this account. Vendors
+without zero data retention, per the same payload: Empiriolabs on V4 Flash 0731,
+DeepSeek on the V4.1 family — every other vendor lists `zero_data_retention: true`.
 
 The gateway's own `usage.cost` on a response is the authoritative bill; the headers
 carry `x-merge-vendor` (the vendor that served it) and `x-merge-model` (the model it
@@ -101,12 +109,12 @@ organization's vendor policy in the gateway dashboard.
 ## Routing and zero data retention
 
 The gateway picks the vendor per request, preferring the cheapest eligible one — today
-GLM 5.3 Flash and V4 Flash 0731 route to Particle, the two V4.1-family entries to
-DeepSeek's own API. Without a vendor pin there is no per-session control over *where* a
-request runs, and the default route for the V4.1 family is a vendor without zero data
-retention (see the vendor list above for which vendors support it). Use the
-organization's routing policy or vendor allow/deny lists in the gateway dashboard when
-a workload must stay on ZDR-capable infrastructure.
+GLM 5.3 Flash routes to pareto, and it is the only vendor this account may route to.
+Without a vendor pin there is no per-session control over *where* a request runs, and
+whether a given vendor is even reachable is decided by the organization's vendor and
+region restrictions (see the vendor list above for which vendors support zero data
+retention — pareto does). Use the organization's routing policy or vendor allow/deny
+lists in the gateway dashboard when a workload must stay on specific infrastructure.
 
 Also note the retired `deepseek/deepseek-v4-flash` id: the gateway resolves it to V4.1
 Flash, so the response comes back as V4.1 Flash (`x-merge-model:

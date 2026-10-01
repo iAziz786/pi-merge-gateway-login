@@ -13,8 +13,9 @@
  * - V4.1 Flash and the retired V4 Flash id → DeepSeek's own API, the cheapest of
  *   its four vendors (0.15/0.60 against Particle 0.20/0.80, Fireworks
  *   0.22/0.66, Baseten 0.30/1.20), 4 of 4 probes.
- * - GLM 5.3 Flash → Particle, tied cheapest with z.ai at 0.015/0.05 against
- *   0.15/0.50 for Baseten, Fireworks, Together and 0.45/1.50 for Modal, 4 of 4.
+ * - GLM 5.3 Flash → pareto (0.03/0.10/cache 0.006), the account's only eligible
+   vendor for it: the catalog used to list seven (Particle at 0.015/0.05, tied
+   with z.ai, up to Modal at 0.45/1.50) and now lists this one.
  * - V4 Flash 0731 → Particle (0.035/0.07, cheapest of five) on two probes and
  *   Makora (0.09/0.195) on two: the preferred vendor alternates, so failover is
  *   real, not hypothetical.
@@ -26,11 +27,11 @@
  * base rates. Cache-write is not billed on these four routes, so it is 0.
  */
 
-/** GLM 5.3 Flash (zai/glm-5.3-flash) — Particle vendor. */
+/** GLM 5.3 Flash (zai/glm-5.3-flash) — pareto, the account's only eligible vendor. */
 export const GLM_53_FLASH_COST = {
-	input: 0.015,
-	output: 0.05,
-	cacheRead: 0.003,
+	input: 0.03,
+	output: 0.1,
+	cacheRead: 0.006,
 	cacheWrite: 0,
 } as const;
 

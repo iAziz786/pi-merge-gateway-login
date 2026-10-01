@@ -44,7 +44,7 @@ describe("GLM 5.3 Flash", () => {
 		expect(GLM_53_FLASH.thinkingLevelMap.minimal).toBe("low");
 		expect(GLM_53_FLASH.thinkingLevelMap.medium).toBe("high");
 		expect(GLM_53_FLASH.thinkingLevelMap.xhigh).toBe("max");
-		expect(GLM_53_FLASH.cost).toEqual({ input: 0.015, output: 0.05, cacheRead: 0.003, cacheWrite: 0 });
+		expect(GLM_53_FLASH.cost).toEqual({ input: 0.03, output: 0.1, cacheRead: 0.006, cacheWrite: 0 });
 	});
 });
 
