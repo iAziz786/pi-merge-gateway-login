@@ -25,7 +25,7 @@
  * cache-hit probes, exact to nine decimals. DeepSeek's own API doubles its rates
  * inside its weekday peak windows (01:00-04:00 and 06:00-10:00 UTC) — the live
  * path applies that from the gateway's `schedule`; these flat cards carry the
- * base rates. Cache-write is not billed on these four routes, so it is 0.
+ * base rates. Cache-write is not billed on these routes, so it is 0.
  */
 
 /** GLM 5.3 Flash (zai/glm-5.3-flash) — pareto, the account's only eligible vendor. */
@@ -63,6 +63,19 @@ export const DEEPSEEK_V4_FLASH_0731_COST = {
 
 /** DeepSeek V4.1 Flash (deepseek/deepseek-v4.1-flash) — DeepSeek's own API. */
 export const DEEPSEEK_V4_1_FLASH_COST = {
+	input: 0.15,
+	output: 0.6,
+	cacheRead: 0.003,
+	cacheWrite: 0,
+} as const;
+
+/**
+ * DeepSeek V4.1 Flash 1017 (deepseek/deepseek-v4.1-flash-1017) — Particle, the
+ * gateway's only vendor for it. Particle bills double inside its daily
+ * 04:00-20:30 New York window; the live path applies that from the gateway's
+ * `schedule`, this flat card carries the base rates.
+ */
+export const DEEPSEEK_V4_1_FLASH_1017_COST = {
 	input: 0.15,
 	output: 0.6,
 	cacheRead: 0.003,

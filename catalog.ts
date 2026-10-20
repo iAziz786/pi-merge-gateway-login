@@ -27,15 +27,17 @@ export interface VendorRates {
 	cacheWrite: number;
 }
 
-/** A recurring UTC peak interval: weekdays use Sunday = 0, the end is exclusive. */
+/** A recurring peak interval in the schedule's zone: weekdays use Sunday = 0, the end is exclusive. */
 export interface PeakWindow {
 	weekdays: number[];
 	startMinute: number;
 	endMinute: number;
 }
 
-/** Peak-window rates that replace the vendor's base rates inside `windows`. */
+/** Peak-window rates that replace the vendor's base rates inside `windows`, read in `timeZone`. */
 export interface PeakSchedule {
+	/** IANA zone the windows are written in; DST shifts them against UTC. */
+	timeZone: string;
 	windows: PeakWindow[];
 	rates: VendorRates;
 }
@@ -109,7 +111,7 @@ function stringList(value: unknown): string[] {
 	return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
 }
 
-/** "01:30" → 90 minutes past UTC midnight. */
+/** "01:30" → 90 minutes past local midnight. */
 function minute(text0: string): number | undefined {
 	const match = /^(\d{1,2}):(\d{2})$/.exec(text0);
 	if (!match) return undefined;
@@ -131,16 +133,43 @@ function parseRates(pricing: Record<string, unknown>): VendorRates {
 	};
 }
 
+const ALL_WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
+
+const zoneFormats = new Map<string, Intl.DateTimeFormat | null>();
+
+/** Cached formatter for an IANA zone; null when the runtime does not know it. */
+function zoneFormat(timeZone: string): Intl.DateTimeFormat | null {
+	let format = zoneFormats.get(timeZone);
+	if (format === undefined) {
+		try {
+			format = new Intl.DateTimeFormat("en-US", {
+				timeZone,
+				weekday: "short",
+				hour: "2-digit",
+				minute: "2-digit",
+				hourCycle: "h23",
+			});
+		} catch {
+			format = null;
+		}
+		zoneFormats.set(timeZone, format);
+	}
+	return format;
+}
+
 function parseSchedule(pricing: Record<string, unknown>): PeakSchedule | undefined {
 	const schedules = Array.isArray(pricing.schedule) ? pricing.schedule : [];
 	for (const candidate of schedules) {
 		const entry = record(candidate);
-		if (!entry || text(entry.timezone) !== "UTC") continue;
+		const timeZone = text(entry?.timezone);
+		if (!entry || !timeZone || !zoneFormat(timeZone)) continue;
 		// The gateway puts the weekdays on the schedule and the clock windows on
-		// its entries: `{ days: ["mon", …], windows: [{ start, end }] }`.
-		const weekdays = stringList(entry.days)
+		// its entries: `{ days: ["mon", …], windows: [{ start, end }] }`. A schedule
+		// that names no days applies every day.
+		const named = stringList(entry.days)
 			.map((day) => WEEKDAYS[day.toLowerCase()])
 			.filter((day): day is number => day !== undefined);
+		const weekdays = Array.isArray(entry.days) && entry.days.length > 0 ? named : ALL_WEEKDAYS;
 		if (weekdays.length === 0) continue;
 		const windows: PeakWindow[] = [];
 		for (const raw of Array.isArray(entry.windows) ? entry.windows : []) {
@@ -151,7 +180,7 @@ function parseSchedule(pricing: Record<string, unknown>): PeakSchedule | undefin
 			if (start === undefined || end === undefined) continue;
 			windows.push({ weekdays, startMinute: start, endMinute: end });
 		}
-		if (windows.length > 0) return { windows, rates: parseRates(entry) };
+		if (windows.length > 0) return { timeZone, windows, rates: parseRates(entry) };
 	}
 	return undefined;
 }
@@ -289,13 +318,20 @@ export function toModelEntry(model: CatalogModel, vendor: VendorEntry): ModelEnt
 	};
 }
 
-/** Is `atMs` inside one of the vendor's peak windows? */
+/** Is `atMs` inside one of the vendor's peak windows, judged on the schedule's local clock? */
 export function isPeak(vendor: VendorEntry, atMs: number): boolean {
 	const schedule = vendor.peak;
-	if (!schedule) return false;
-	const day = Math.floor(atMs / 86_400_000);
-	const weekday = (((day + 4) % 7) + 7) % 7;
-	const minuteOfDay = Math.floor((atMs - day * 86_400_000) / 60_000);
+	const format = schedule && zoneFormat(schedule.timeZone);
+	if (!schedule || !format) return false;
+	let weekday = -1;
+	let hour = 0;
+	let minuteOfHour = 0;
+	for (const part of format.formatToParts(atMs)) {
+		if (part.type === "weekday") weekday = WEEKDAYS[part.value.toLowerCase().slice(0, 3)] ?? -1;
+		else if (part.type === "hour") hour = Number(part.value);
+		else if (part.type === "minute") minuteOfHour = Number(part.value);
+	}
+	const minuteOfDay = hour * 60 + minuteOfHour;
 	return schedule.windows.some(
 		(window) =>
 			window.weekdays.includes(weekday) && minuteOfDay >= window.startMinute && minuteOfDay < window.endMinute,

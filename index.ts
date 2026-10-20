@@ -15,7 +15,7 @@
  *
  * Model list: the gateway's own catalog (`GET /v1/models`) — every chat-capable
  * model it serves, under the gateway's ids, with the rates of the vendor the
- * gateway prefers for it. The four models in models.ts are the offline fallback
+ * gateway prefers for it. The five models in models.ts are the offline fallback
  * when no key is available or the catalog cannot be reached.
  *
  * Pricing: the gateway routes each request to the cheapest eligible vendor and
@@ -112,7 +112,7 @@ export function priceTurnAtVendor(
 /**
  * Fetch the catalog and turn it into pi model entries. Returns undefined when
  * the gateway is unreachable or serves nothing usable, which keeps the static
- * four models registered instead.
+ * five models registered instead.
  */
 async function loadCatalog(apiKey: string, fetchImpl: typeof fetch): Promise<CatalogLoad | undefined> {
 	try {

@@ -4,6 +4,7 @@ import {
 	DEEPSEEK_V4_FLASH,
 	DEEPSEEK_V4_FLASH_0731,
 	DEEPSEEK_V4_1_FLASH,
+	DEEPSEEK_V4_1_FLASH_1017,
 	ALL_MODELS,
 } from "./models.ts";
 
@@ -14,6 +15,7 @@ describe("registered models", () => {
 			"deepseek/deepseek-v4-flash",
 			"deepseek/deepseek-v4-flash-0731",
 			"deepseek/deepseek-v4.1-flash",
+			"deepseek/deepseek-v4.1-flash-1017",
 		]);
 	});
 
@@ -86,5 +88,20 @@ describe("DeepSeek V4.1 Flash", () => {
 			cacheRead: 0.003,
 			cacheWrite: 0,
 		});
+	});
+});
+
+describe("DeepSeek V4.1 Flash 1017", () => {
+	it("is the October snapshot: image input, 1M context, Particle base rates", () => {
+		expect(DEEPSEEK_V4_1_FLASH_1017.name).toBe("DeepSeek V4.1 Flash 1017");
+		expect(DEEPSEEK_V4_1_FLASH_1017.contextWindow).toBe(1_000_000);
+		expect(DEEPSEEK_V4_1_FLASH_1017.maxTokens).toBe(384_000);
+		expect(DEEPSEEK_V4_1_FLASH_1017.input).toEqual(["text", "image"]);
+		expect(DEEPSEEK_V4_1_FLASH_1017.cost).toEqual({ input: 0.15, output: 0.6, cacheRead: 0.003, cacheWrite: 0 });
+	});
+
+	it("takes the full reasoning ladder", () => {
+		expect(DEEPSEEK_V4_1_FLASH_1017.thinkingLevelMap.off).toBe("none");
+		expect(DEEPSEEK_V4_1_FLASH_1017.thinkingLevelMap.max).toBe("max");
 	});
 });

@@ -2,7 +2,7 @@
  * Bundled fallback models for the Merge Dev gateway provider.
  *
  * The extension registers the gateway's live catalog (`GET /v1/models`) when it
- * can reach it; these four are what remains when no API key is available at
+ * can reach it; these five are what remains when no API key is available at
  * startup or the catalog fetch fails. One entry per gateway model, using the
  * gateway's own model id: requests are left unpinned and the gateway picks the
  * vendor. Ids stay wire-valid everywhere, including pi/omp side requests
@@ -18,6 +18,7 @@ import {
 	DEEPSEEK_V4_FLASH_COST,
 	DEEPSEEK_V4_FLASH_0731_COST,
 	DEEPSEEK_V4_1_FLASH_COST,
+	DEEPSEEK_V4_1_FLASH_1017_COST,
 } from "./pricing.ts";
 
 // Map pi thinking levels to the upstream reasoning effort values
@@ -116,9 +117,18 @@ export const DEEPSEEK_V4_1_FLASH = {
 	thinkingLevelMap: DEEPSEEK_EFFORT_MAP,
 } as const;
 
+export const DEEPSEEK_V4_1_FLASH_1017 = {
+	...DEEPSEEK_V4_1_FLASH_BASE,
+	id: "deepseek/deepseek-v4.1-flash-1017",
+	name: "DeepSeek V4.1 Flash 1017",
+	cost: { ...DEEPSEEK_V4_1_FLASH_1017_COST },
+	thinkingLevelMap: DEEPSEEK_EFFORT_MAP,
+} as const;
+
 export const ALL_MODELS = [
 	GLM_53_FLASH,
 	DEEPSEEK_V4_FLASH,
 	DEEPSEEK_V4_FLASH_0731,
 	DEEPSEEK_V4_1_FLASH,
+	DEEPSEEK_V4_1_FLASH_1017,
 ] as const;

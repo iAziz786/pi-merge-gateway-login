@@ -4,6 +4,7 @@ import {
 	DEEPSEEK_V4_FLASH_COST,
 	DEEPSEEK_V4_FLASH_0731_COST,
 	DEEPSEEK_V4_1_FLASH_COST,
+	DEEPSEEK_V4_1_FLASH_1017_COST,
 } from "./pricing.ts";
 
 // Each card is the rate of the vendor the gateway prefers for that model (the
@@ -39,6 +40,17 @@ describe("DeepSeek V4 Flash 0731 pricing", () => {
 describe("DeepSeek V4.1 Flash pricing", () => {
 	it("uses DeepSeek's off-peak base rates", () => {
 		expect(DEEPSEEK_V4_1_FLASH_COST).toEqual({
+			input: 0.15,
+			output: 0.6,
+			cacheRead: 0.003,
+			cacheWrite: 0,
+		});
+	});
+});
+
+describe("DeepSeek V4.1 Flash 1017 pricing", () => {
+	it("uses the Particle base rates, the gateway's only vendor for it", () => {
+		expect(DEEPSEEK_V4_1_FLASH_1017_COST).toEqual({
 			input: 0.15,
 			output: 0.6,
 			cacheRead: 0.003,

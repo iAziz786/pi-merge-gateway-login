@@ -68,6 +68,7 @@ const FALLBACK_IDS = [
 	"deepseek/deepseek-v4-flash",
 	"deepseek/deepseek-v4-flash-0731",
 	"deepseek/deepseek-v4.1-flash",
+	"deepseek/deepseek-v4.1-flash-1017",
 ];
 
 type Handler = (event: never, ctx: never) => void;

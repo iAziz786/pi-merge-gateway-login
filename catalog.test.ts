@@ -117,8 +117,9 @@ describe("parseCatalog", () => {
 		expect(deepseek?.rates).toEqual({ input: 0.15, output: 0.6, cacheRead: 0.003, cacheWrite: 0 });
 	});
 
-	it("parses the peak schedule into UTC minutes and Sunday-0 weekdays", () => {
+	it("parses the peak schedule into zone-local minutes and Sunday-0 weekdays", () => {
 		expect(MODELS[0]?.vendors.find((vendor) => vendor.vendor === "deepseek")?.peak).toEqual({
+			timeZone: "UTC",
 			windows: [
 				{ weekdays: [1, 2, 3, 4, 5], startMinute: 60, endMinute: 240 },
 				{ weekdays: [1, 2, 3, 4, 5], startMinute: 360, endMinute: 600 },
@@ -170,6 +171,123 @@ describe("ratesFor", () => {
 				cacheWrite: 0,
 			});
 		}
+	});
+});
+
+// deepseek/deepseek-v4.1-flash-1017 as the live gateway serves it: the peak
+// schedule is in New York time and names no days, meaning every day.
+const NEW_YORK_PEAK_MODEL = parseCatalog({
+	data: [
+		{
+			model: "deepseek/deepseek-v4.1-flash-1017",
+			display_name: "DeepSeek V4.1 Flash 1017",
+			aliases: [],
+			vendors: {
+				particle: {
+					context_window: 1_000_000,
+					max_output_tokens: 384_000,
+					capabilities: { input: ["text", "image"], supports_reasoning: true, output: ["text", "tool_use"] },
+					pricing: {
+						input_per_million: 0.15,
+						output_per_million: 0.6,
+						cache_read_per_million: 0.003,
+						schedule: [
+							{
+								name: "peak",
+								timezone: "America/New_York",
+								days: null,
+								windows: [{ start: "04:00", end: "20:30" }],
+								input_per_million: 0.3,
+								output_per_million: 1.2,
+								cache_read_per_million: 0.006,
+								cache_write_per_million: null,
+							},
+						],
+					},
+				},
+			},
+		},
+	],
+})[0]!.vendors[0]!;
+
+describe("ratesFor with a non-UTC schedule", () => {
+	const base = { input: 0.15, output: 0.6, cacheRead: 0.003, cacheWrite: 0 };
+	const peak = { input: 0.3, output: 1.2, cacheRead: 0.006, cacheWrite: 0 };
+
+	it("opens and closes the window on New York wall-clock time in summer (UTC-4)", () => {
+		expect(ratesFor(NEW_YORK_PEAK_MODEL, Date.UTC(2026, 9, 20, 7, 59))).toEqual(base); // 03:59 EDT
+		expect(ratesFor(NEW_YORK_PEAK_MODEL, Date.UTC(2026, 9, 20, 8, 0))).toEqual(peak); // 04:00 EDT
+		expect(ratesFor(NEW_YORK_PEAK_MODEL, Date.UTC(2026, 9, 21, 0, 29))).toEqual(peak); // 20:29 EDT
+		expect(ratesFor(NEW_YORK_PEAK_MODEL, Date.UTC(2026, 9, 21, 0, 30))).toEqual(base); // 20:30 EDT
+	});
+
+	it("follows daylight saving: the same window sits an hour later in UTC in winter (UTC-5)", () => {
+		expect(ratesFor(NEW_YORK_PEAK_MODEL, Date.UTC(2026, 11, 15, 8, 59))).toEqual(base); // 03:59 EST
+		expect(ratesFor(NEW_YORK_PEAK_MODEL, Date.UTC(2026, 11, 15, 9, 0))).toEqual(peak); // 04:00 EST
+	});
+
+	it("applies on every day when the schedule names none", () => {
+		expect(ratesFor(NEW_YORK_PEAK_MODEL, Date.UTC(2026, 9, 18, 12, 0))).toEqual(peak); // Sunday
+		expect(ratesFor(NEW_YORK_PEAK_MODEL, Date.UTC(2026, 9, 17, 12, 0))).toEqual(peak); // Saturday
+	});
+
+	it("uses the New York weekday, not the UTC one, for a day-limited schedule", () => {
+		const weekdayOnly = parseCatalog({
+			data: [
+				{
+					model: "x/y",
+					vendors: {
+						v: {
+							context_window: 1,
+							max_output_tokens: 1,
+							capabilities: { input: ["text"], output: ["text"] },
+							pricing: {
+								input_per_million: 1,
+								output_per_million: 1,
+								schedule: [
+									{
+										timezone: "America/New_York",
+										days: ["mon"],
+										windows: [{ start: "20:00", end: "23:00" }],
+										input_per_million: 2,
+										output_per_million: 2,
+									},
+								],
+							},
+						},
+					},
+				},
+			],
+		})[0]!.vendors[0]!;
+		// Monday 20:30 EDT is Tuesday 00:30 UTC: inside Monday's window.
+		expect(ratesFor(weekdayOnly, Date.UTC(2026, 9, 20, 0, 30)).input).toBe(2);
+		// Tuesday 20:30 EDT is Wednesday 00:30 UTC: in the window's hours, but the wrong day.
+		expect(ratesFor(weekdayOnly, Date.UTC(2026, 9, 21, 0, 30)).input).toBe(1);
+	});
+
+	it("ignores a schedule whose timezone is not a valid zone", () => {
+		const bad = parseCatalog({
+			data: [
+				{
+					model: "x/y",
+					vendors: {
+						v: {
+							context_window: 1,
+							max_output_tokens: 1,
+							capabilities: { input: ["text"], output: ["text"] },
+							pricing: {
+								input_per_million: 1,
+								output_per_million: 1,
+								schedule: [
+									{ timezone: "Mars/Olympus", windows: [{ start: "00:00", end: "23:00" }], input_per_million: 2, output_per_million: 2 },
+								],
+							},
+						},
+					},
+				},
+			],
+		})[0]!.vendors[0]!;
+		expect(bad.peak).toBeUndefined();
 	});
 });
 

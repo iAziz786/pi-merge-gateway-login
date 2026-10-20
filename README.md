@@ -23,7 +23,7 @@ Permissions: outbound HTTPS to `api-gateway.merge.dev` only. No filesystem or su
 The extension registers the gateway's own catalog — every chat-capable model it
 serves, under the gateway's model IDs (`GET /v1/models`, with context window,
 output cap, input modalities, and reasoning ladder per model taken from the
-model's preferred vendor). It is fetched at startup and falls back to four
+model's preferred vendor). It is fetched at startup and falls back to five
 bundled models when no API key is available or the gateway cannot be reached:
 
 The catalog is scoped to what your organization is allowed to route, and that
@@ -40,6 +40,7 @@ gateway dashboard do.
 | `merge-gateway/deepseek/deepseek-v4-flash` | DeepSeek V4 Flash (retired, resolved to V4.1) | DeepSeek |
 | `merge-gateway/deepseek/deepseek-v4-flash-0731` | DeepSeek V4 Flash 0731 | Particle |
 | `merge-gateway/deepseek/deepseek-v4.1-flash` | DeepSeek V4.1 Flash | DeepSeek |
+| `merge-gateway/deepseek/deepseek-v4.1-flash-1017` | DeepSeek V4.1 Flash 1017 | Particle |
 
 Pick via `/model` in pi (`omp models merge-gateway` lists them all). Requests are
 **not pinned to a vendor**: the gateway picks. That
@@ -68,8 +69,10 @@ extension prices each turn at the vendor that actually served it: `after_provide
 fires before the response stream is consumed — and therefore before pi prices the usage —
 and rewrites the model's rates from that response's `x-merge-vendor` header, using the
 rates from the gateway's own catalog. Input, output, cache-read, and cache-write rates
-all follow the serving vendor, and DeepSeek's peak windows (weekdays 01:00–04:00 and
-06:00–10:00 UTC, 2×) are applied from its `schedule`, so the displayed cost matches the
+all follow the serving vendor, and each vendor's peak windows are applied from its `schedule`
+in the zone the gateway states (DeepSeek: weekdays 01:00–04:00 and 06:00–10:00 UTC, 2×;
+V4.1 Flash 1017 on Particle: daily 04:00–20:30 New York time, 2×, daylight saving followed),
+so the displayed cost matches the
 gateway's `usage.cost` rather than an estimate.
 
 If the catalog could not be fetched, the bundled cards below remain — one per model, at
@@ -81,13 +84,14 @@ the preferred vendor's base rates, which is the route the gateway picks by defau
 | `deepseek/deepseek-v4-flash` | DeepSeek | $0.15 | $0.60 | $0.003 |
 | `deepseek/deepseek-v4-flash-0731` | Particle | $0.035 | $0.07 | $0.007 |
 | `deepseek/deepseek-v4.1-flash` | DeepSeek | $0.15 | $0.60 | $0.003 |
+| `deepseek/deepseek-v4.1-flash-1017` | Particle | $0.15 | $0.60 | $0.003 |
 
 Rates are per million tokens and were verified against the gateway's own `usage.cost`
 on live probes — cold and cache-hit turns matched to nine decimals. Cache writes are
 billed only on some vendors (Anthropic and Bedrock entries, from `cache_write_per_million`).
 
 Every vendor the gateway may choose, with what it charges, comes from `GET /v1/models`
-and is applied automatically. For the four bundle models:
+and is applied automatically. For the five bundle models:
 
 | Model | Eligible vendors (input / output / cache read per M) |
 |---|---|
@@ -95,6 +99,7 @@ and is applied automatically. For the four bundle models:
 | `deepseek/deepseek-v4-flash` | resolved to V4.1 Flash before routing, and billed as it |
 | `deepseek/deepseek-v4-flash-0731` | Particle 0.035/0.07/0.007 · Makora 0.09/0.195/0.0196 · Baseten 0.13/0.26/0.028 · Together AI 0.14/0.28/0.03 · Empiriolabs 0.14/0.28 |
 | `deepseek/deepseek-v4.1-flash` | DeepSeek 0.15/0.60/0.003 · Particle 0.20/0.80/0.03 · Fireworks 0.22/0.66/0.007 · Baseten 0.30/1.20/0.03 |
+| `deepseek/deepseek-v4.1-flash-1017` | Particle 0.15/0.60/0.003 (only vendor listed; peak 0.30/1.20/0.006) |
 
 The DeepSeek rows are what the gateway listed while those models were reachable;
 they now return `400 vendor_restrictions_unavailable` on this account. Vendors
